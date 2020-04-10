@@ -39,6 +39,8 @@ function Base.show(io::IO, ::MIME"text/plain", k::Kernel)
     print(code_lowered(k.f, (AbstractArray{Any},))[1])
 end
 
+@inline @propagate_inbounds (k::Kernel)(w::Window) = k.f(w)
+
 Base.ndims(k::Kernel) = length(size(k))
 Base.size(::Kernel{<:Any,S}) where S = S
 center(::Kernel{<:Any,<:Any,C}) where C = C
@@ -64,4 +66,4 @@ end
 Evaluate kernel `k` on `a` centered at index `i`.
 """
 @inline @propagate_inbounds Base.getindex(a::DenseArray, k::Kernel, i...) =
-    k.f(Window(a, CartesianIndex(i)))
+    k(Window(a, CartesianIndex(i)))

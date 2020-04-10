@@ -26,6 +26,9 @@ Base.ndims(w::Window{<:Any,N}) where N = N
 @inline function Base.getindex(w::Window, wi...)
     ci = w.center + CartesianIndex(wi)
 
+    # TODO: it might make sense to have the window size statically known so we
+    #       can fail on out-of-bounds access earlier with a tailored error
+    #       message
     @boundscheck checkbounds(LinearIndices(w.psize), ci)
 
     # TODO: would like to use LinearIndices here, but it creates extra
