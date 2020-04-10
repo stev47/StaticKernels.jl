@@ -1,4 +1,4 @@
-using Base: @propagate_inbounds
+using Base: promote_op, @propagate_inbounds
 
 """
     Kernel{S}(wf)
@@ -6,8 +6,17 @@ using Base: @propagate_inbounds
 
 Create a stack-allocated kernel of size `S`, centered around `C` and wrapping a
 window function `wf`.
-The window function defines a reduction of values given in an `S`-sized window
+The window function defines a reduction of values within an `S`-sized window
 centered in `C`.
+For best performance you should annotate `wf` with `@inline` and index access
+with `@inbounds`.
+
+```@example
+@inline function wf(w)
+    return @inbounds w[0,-1] + w[-1,0] + 4*w[0,0] + w[1,0] + w[0,1]
+end
+Kernel{(3,3)}(wf)
+```
 """
 struct Kernel{F, S, C}
     f::F
@@ -33,6 +42,7 @@ end
 Base.ndims(k::Kernel) = length(size(k))
 Base.size(::Kernel{<:Any,S}) where S = S
 center(::Kernel{<:Any,<:Any,C}) where C = C
+Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} = Base.promote_op(k.f, Window{T,N})
 
 """
     axes(a::AbstractArray, k::Kernel)

@@ -6,7 +6,7 @@ include("kernel.jl")
 include("window.jl")
 
 
-Base.map(k::Kernel, a::AbstractArray) = map!(k, similar(a), a)
+Base.map(k::Kernel, a::AbstractArray) = map!(k, similar(a, eltype(a, k)), a)
 
 function Base.map!(k::Kernel, b::AbstractArray, a::AbstractArray)
     axes(b) == axes(a) ||
