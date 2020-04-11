@@ -23,6 +23,11 @@ struct Window{T,N,K} <: AbstractArray{T,N}
     end
 end
 
+@inline function Base.Tuple(w::Window)
+    @inline function f(i) @inbounds w[i] end
+    return ntuple(f, Val(prod(size(w))))
+end
+
 center(w::Window) = w.center
 
 # AbstractArray interface
@@ -34,7 +39,7 @@ Base.axes(w::Window) = axes(w.kernel)
 #Base.similar(w::Window, T::Type) = similar(w, T, size(w))
 
 # FIXME: only to support e.g. Base.last(), fix upstream?
-Base.getindex(w::Window, wi::Int) = w[eachindex(w)[wi]]
+@inline Base.getindex(w::Window, wi::Int) = @inbounds w[eachindex(w)[wi]]
 
 @inline function Base.getindex(w::Window, wi::Int...)
     wi = CartesianIndex(wi)
