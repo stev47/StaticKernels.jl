@@ -45,6 +45,9 @@ Base.size(::Kernel{<:Any,S}) where S = S
 center(::Kernel{<:Any,<:Any,C}) where C = C
 Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} = Base.promote_op(k.f, Window{T,N,typeof(k)})
 
+
+Base.axes(k::Kernel) = map((s, c) -> 1 - c : s - c, size(k), center(k))
+
 """
     axes(a::AbstractArray, k::Kernel)
 
@@ -53,8 +56,8 @@ Returns axes along which `k` fits within `a`.
 function Base.axes(a::AbstractArray, k::Kernel)
     ndims(a) == ndims(k) ||
         throw(ArgumentError("mismatching number of dimensions: $(ndims(a)) vs $(ndims(k))"))
-    return map(axes(a), size(k), center(k)) do ax, ks, kc
-        first(ax) + kc - 1 : last(ax) - ks + kc
+    return map(axes(a), axes(k)) do ax, kx
+        first(ax) - first(kx) : last(ax) - last(kx)
     end
 end
 

@@ -22,3 +22,12 @@ k = Kernel{(3,3),(1,1)}(w -> w[0,-1] + w[-1,0] + 4*w[0,0] + w[1,0] + w[0,1])
 map!(k, b, a)
 map!(k, b, a1, a2)
 ```
+
+## TODO
+
+- syntactic sugar for determining kernel size through index access:
+  `@kernel(w -> w[1] - w[0]) == Kernel{(2,),(1,)}(w -> w[1] - w[0])`
+- boundary handling using `Union{T,Nothing}`
+- sum(w)
+- vector simd performance `diff(v)`
+- strided array interface for inner windows

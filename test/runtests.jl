@@ -1,6 +1,8 @@
 using Test
 using StaticFilters
 
+using StaticFilters: Window
+
 
 a = rand(rand(5:10, 3)...)
 
@@ -31,4 +33,12 @@ end
     gx = axes(a, grad)
     @test diff(a, dims=1)[gx...] == [x[1] for x in grada[gx...]]
     @test diff(a, dims=2)[gx...] == [x[2] for x in grada[gx...]]
+end
+
+@testset "window as array" begin
+    a = rand(3, 3)
+    k = Kernel{(3, 3)}(w -> sum(w))
+    w = Window(a, k, CartesianIndex(2, 2))
+
+    @test sum(w) == sum(a)
 end
