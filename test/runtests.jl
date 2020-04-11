@@ -25,6 +25,16 @@ dzeros = ntuple(i -> 0, ndims(a))
     @test x[axes(a,k)...] == y
 end
 
+@testset "vector" begin
+    a = rand(100)
+    k = Kernel{(2,),(1,)}(w -> w[1] - w[0])
+    x = axes(a, k)
+    b = map(k, a)
+    c = diff(a)
+
+    @test b[x...] == c[x...]
+end
+
 @testset "different return type" begin
     a = rand(10, 10)
     grad = Kernel{(2,2),(1,1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))

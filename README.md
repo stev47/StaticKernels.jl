@@ -25,8 +25,7 @@ map!(k, b, a1, a2)
 
 ## TODO
 
+- boundary handling using `Union{T,Nothing}`
 - syntactic sugar for determining kernel size through index access:
   `@kernel(w -> w[1] - w[0]) == Kernel{(2,),(1,)}(w -> w[1] - w[0])`
-- boundary handling using `Union{T,Nothing}`
-- vector simd performance `diff(v)`
 - strided array interface for inner windows
