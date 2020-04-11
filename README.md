@@ -23,6 +23,28 @@ map!(k, b, a)
 map!(k, b, a1, a2)
 ```
 
+
+## Examples
+
+
+### Non-scalar Output
+
+### Fast Local Matrix Operations
+
+```julia
+using StaticArrays, LinearAlgebra
+
+@inline function(w)
+    m = SMatrix{size(w)...}(Tuple(w))
+    return det(m)
+end
+
+a = rand(100, 100)
+map(Kernel{(3,3)}(wf), a)
+```
+
+
+
 ## TODO
 
 - boundary handling using `Union{T,Nothing}`
