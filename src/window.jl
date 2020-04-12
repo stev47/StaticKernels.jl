@@ -1,26 +1,40 @@
 using Base: require_one_based_indexing, _sub2ind, substrides
 
 """
-    Window{T,N,K} <: AbstractArray{T,N}
+    Window{T,N,X} <: AbstractArray{T,N}
 
-A stack-allocated view with cartesian indexing relative to some center.
+A stack-allocated view with axes `X` and cartesian indexing relative to some
+position in the parent array.
+"""
+struct Window{T,N,X} <: AbstractArray{T,N}
+    position::CartesianIndex{N}
+    parent_ptr::Ptr{T}
+    parent_size::NTuple{N,Int}
+
+    # TODO: relax to StridedArrays
+    function Window{X}(a::DenseArray{T,N}, pos::CartesianIndex{N}) where {T,N,X}
+        # because we use Base._sub2ind
+        require_one_based_indexing(a)
+        return new{T,N,X}(pos, pointer(a), size(a))
+    end
+end
+
+"""
+    Window{X}(a::DenseArray, pos::CartesianIndex)
+    Window(k::Kernel, a::DenseArray, pos::CartesianIndex)
+
+Create a stack-allocated view on `a` with axes `X` and cartesian indexing
+relative to `pos` in the parent array.
+If constructed with a kernel `k` then `X = axes(k)`.
+
 The user is responsible for ensuring that the parent array outlives this object
 by using e.g. `GC.@preserve`.
 """
-struct Window{T,N,K} <: AbstractArray{T,N}
-    ptr::Ptr{T}
-    center::CartesianIndex{N}
-    psize::NTuple{N,Int}
-    kernel::K
+function Window(k::Kernel, a::DenseArray, pos::CartesianIndex)
+    ndims(k) == ndims(a) == length(pos) ||
+        throw(DimensionMismatch("$(ndims(k)) vs $(ndims(a)) vs $(length(pos))"))
 
-    function Window(a::DenseArray{T,N}, k::Kernel, center::CartesianIndex{N}) where {T,N}
-        ndims(k) == ndims(a) ||
-            throw(ArgumentError("invalid number of dimensions: $(ndims(k)) vs $(ndims(a))"))
-        require_one_based_indexing(a)
-        ptr = pointer(a)
-        psize = size(a)
-        return new{T,N,typeof(k)}(ptr, center, psize, k)
-    end
+    return Window{axes(k)}(a, pos)
 end
 
 @inline function Base.Tuple(w::Window)
@@ -29,36 +43,39 @@ end
     return ntuple(f, Val(prod(size(w))))
 end
 
-center(w::Window) = w.center
+position(w::Window) = w.position
 
 # AbstractArray interface
 
-Base.size(w::Window) = size(w.kernel)
-Base.axes(w::Window) = axes(w.kernel)
+Base.axes(::Window{<:Any,<:Any,X}) where X = X
+Base.ndims(w::Window) = length(axes(w))
+Base.size(w::Window) = length.(axes(w))
+
 # TODO: we don't want a fully fledged OffsetArray, but having similar() and
 #       copy() work would be nice
 #Base.similar(w::Window, T::Type) = similar(w, T, size(w))
 
 @inline function Base.getindex(w::Window{<:Any,N}, wi::Vararg{Int,N}) where N
+    #wis = CartesianIndices(axes(w))
     wi = CartesianIndex(wi)
 
+    # TODO: handle boundary with nothing
     # index within window?
-    @boundscheck checkbounds(Bool, LinearIndices(size(w.kernel)),
-                             CartesianIndex(center(w.kernel)) + wi) ||
-        throw(BoundsError(w, (wi,)))
+    @boundscheck checkbounds(w, wi)
 
-    ci = center(w) + wi
+    pi = position(w) + wi
 
     # translated index within parent array?
     # (only necessary if window was created improperly)
-    @boundscheck checkbounds(LinearIndices(w.psize), ci)
+    @boundscheck checkbounds(Bool, CartesianIndices(w.parent_size), pi) ||
+        throw(BoundsError(unsafe_wrap(Array, w.parent_ptr, w.parent_size), Tuple(pi)))
 
     # TODO: would like to use LinearIndices here, but it creates extra
     #       instructions, fix upstream?
-    # li = LinearIndices(w.psize)[ci]
-    li = _sub2ind(w.psize, Tuple(ci)...)
+    # pli = LinearIndices(w.parent_size)[pi]
+    pli = _sub2ind(w.parent_size, Tuple(pi)...)
 
-    return unsafe_load(w.ptr, li)
+    return unsafe_load(w.parent_ptr, pli)
 end
 
 Base.setindex(w::Window, wi::Int...) = throw(ArgumentError("mutation unsupported"))
@@ -69,4 +86,4 @@ Base.setindex(w::Window, wi::Int...) = throw(ArgumentError("mutation unsupported
 #Base.unsafe_convert(::Type{Ptr{T}}, ::Window{T}) = w.ptr + (firstindex(w) - 1) * sizeof(T)
 
 
-@inline @propagate_inbounds (k::Kernel)(w::Window) = k.f(w)
+@inline (k::Kernel)(w::Window) = k.wf(w)

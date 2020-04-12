@@ -1,13 +1,11 @@
 using Base: promote_op, @propagate_inbounds
 
 """
-    Kernel{S}(wf)
-    Kernel{S, C}(wf)
+    Kernel{X}(wf)
 
-Create a stack-allocated kernel of size `S`, centered around `C` and wrapping a
-window function `wf`.
-The window function defines a reduction of values within an `S`-sized window
-centered in `C`.
+Create a stack-allocated kernel with axes `X`, wrapping a window function
+`wf`.
+The window function defines a reduction of values within the `X`-sized window.
 For best performance you should annotate `wf` with `@inline` and index access
 with `@inbounds`.
 
@@ -15,52 +13,47 @@ with `@inbounds`.
 @inline function wf(w)
     return @inbounds w[0,-1] + w[-1,0] + 4*w[0,0] + w[1,0] + w[0,1]
 end
-Kernel{(3,3)}(wf)
+Kernel{(-1:1,-1:1)}(wf)
 ```
 """
-struct Kernel{F, S, C}
-    f::F
-    function Kernel{S, C}(f::F) where {S, C, F}
-        checkbounds(Bool, CartesianIndices(S), CartesianIndex(C)) ||
-            throw(ArgumentError("kernel center $C out of bounds $S"))
-        return new{F, S, C}(f)
+struct Kernel{X, F}
+    wf::F
+    function Kernel{X}(wf::F) where {X, F<:Function}
+        X isa NTuple{<:Any,UnitRange{Int}} ||
+            throw(ArgumentError("invalid axes"))
+        return new{X, F}(wf)
     end
 end
 
-function Kernel{S}(f::F) where {S, F}
-    all(isodd, S) ||
-        throw(ArgumentError("please specify kernel center for non-centered kernels"))
-    C = map(x -> div(x, 2, RoundUp), S)
-    return Kernel{S, C}(f)
-end
-
 function Base.show(io::IO, ::MIME"text/plain", k::Kernel)
-    println(io, "Kernel{$(size(k)),$(center(k))} with window function\n")
-    print(code_lowered(k.f, (AbstractArray{Any},))[1])
+    println(io, "Kernel{$(axes(k))} with window function\n")
+    print(code_lowered(k.wf, (AbstractArray{Any},))[1])
 end
 
-Base.ndims(k::Kernel) = length(size(k))
-Base.size(::Kernel{<:Any,S}) where S = S
-# TODO: should return CartesianIndex
-center(::Kernel{<:Any,<:Any,C}) where C = C
-Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} = Base.promote_op(k.f, Window{T,N,typeof(k)})
+Base.axes(::Kernel{X}) where X = X
+Base.ndims(k::Kernel) = length(axes(k))
+Base.size(k::Kernel) = length.(axes(k))
 
+"""
+    eltype(a::AbstractArray, k::Kernel)
 
-Base.axes(k::Kernel) = map((s, c) -> 1 - c : s - c, size(k), center(k))
+Infer the return type of `k` applied to a window of `a`.
+"""
+Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} = Base.promote_op(k.wf, Window{T,N,axes(k)})
 
 """
     axes(a::AbstractArray, k::Kernel)
 
 Returns axes along which `k` fits within `a`.
 """
-function Base.axes(a::AbstractArray, k::Kernel)
+@inline function Base.axes(a::AbstractArray, k::Kernel)
     ndims(a) == ndims(k) ||
-        throw(ArgumentError("mismatching number of dimensions: $(ndims(a)) vs $(ndims(k))"))
+        throw(DimensionMismatch("$(ndims(a)) vs $(ndims(k))"))
+
     return map(axes(a), axes(k)) do ax, kx
         first(ax) - first(kx) : last(ax) - last(kx)
     end
 end
-
 
 """
     getindex(a::AbstractArray, k::Kernel, i...)
@@ -68,4 +61,4 @@ end
 Evaluate kernel `k` on `a` centered at index `i`.
 """
 @inline @propagate_inbounds Base.getindex(a::DenseArray, k::Kernel, i...) =
-    k(Window(a, k, CartesianIndex(i)))
+    k(Window(k, a, CartesianIndex(i)))

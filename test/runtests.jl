@@ -12,8 +12,7 @@ dzeros = ntuple(i -> 0, ndims(a))
 @testset "basics" for i in 1:ndims(a)
     ddir = ntuple(j -> Int(j == i), ndims(a))
 
-    ksize = dones .+ Tuple(ddir)
-    k = Kernel{ksize, dones}() do w
+    k = Kernel{UnitRange.(dzeros, ddir)}() do w
         return w[ddir...] - w[dzeros...]
     end
 
@@ -27,7 +26,7 @@ end
 
 @testset "vector" begin
     a = rand(100)
-    k = Kernel{(2,),(1,)}(w -> w[1] - w[0])
+    k = Kernel{(0:1,)}(w -> w[1] - w[0])
     x = axes(a, k)
     b = map(k, a)
     c = diff(a)
@@ -37,9 +36,9 @@ end
 
 @testset "different return type" begin
     a = rand(10, 10)
-    grad = Kernel{(2,2),(1,1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))
+    grad = Kernel{(0:1,0:1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))
 
-    grada = map(grad, a)
+    grada = @inferred map(grad, a)
     gx = axes(a, grad)
     @test diff(a, dims=1)[gx...] == [x[1] for x in grada[gx...]]
     @test diff(a, dims=2)[gx...] == [x[2] for x in grada[gx...]]
@@ -47,8 +46,8 @@ end
 
 @testset "window as array" begin
     a = rand(3, 3)
-    k = Kernel{(3, 3)}(w -> sum(w))
-    w = Window(a, k, CartesianIndex(2, 2))
+    k = Kernel{(-1:1, -1:1)}(w -> sum(w))
+    w = Window(k, a, CartesianIndex(2, 2))
 
     @test sum(w) == sum(a)
 end
