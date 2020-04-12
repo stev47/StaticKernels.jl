@@ -68,7 +68,7 @@ Base.size(w::Window) = length.(axes(w))
     # translated index within parent array?
     # (only necessary if window was created improperly)
     @boundscheck checkbounds(Bool, CartesianIndices(w.parent_size), pi) ||
-        throw(BoundsError(unsafe_wrap(Array, w.parent_ptr, w.parent_size), Tuple(pi)))
+        throw(BoundsError(unsafe_wrap(Array, w.parent_ptr, w.parent_size), (pi,)))
 
     # TODO: would like to use LinearIndices here, but it creates extra
     #       instructions, fix upstream?

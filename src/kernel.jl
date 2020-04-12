@@ -39,7 +39,8 @@ Base.size(k::Kernel) = length.(axes(k))
 
 Infer the return type of `k` applied to a window of `a`.
 """
-Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} = Base.promote_op(k.wf, Window{T,N,axes(k)})
+Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} =
+    Base.promote_op(k.wf, Window{T,N,axes(k)})
 
 """
     axes(a::AbstractArray, k::Kernel)
