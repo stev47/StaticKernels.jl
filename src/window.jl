@@ -11,6 +11,14 @@ by using e.g. `GC.@preserve`.
 """
 function Window end
 
+"""
+    Tuple(w::Window)
+
+Create a tuple from the statically sized window `w`.
+
+NOTE: this doesn't check bounds and thus assumes the window was properly
+      created.
+"""
 @inline function Base.Tuple(w::Window{T}) where T
     ci = eachindex(w)
     @inline function f(i) @inbounds w[ci[i]]::T end
@@ -62,7 +70,6 @@ Base.setindex(w::Window, wi::Int...) = throw(ArgumentError("mutation unsupported
 # TODO: we don't want a fully fledged OffsetArray, but having similar() and
 #       copy() work would be nice
 #Base.similar(w::Window, T::Type) = similar(w, T, size(w))
-
 
 # FIXME: remove these as soon as we <:AbstractArray
 Base.length(w::Window) = prod(size(w))
