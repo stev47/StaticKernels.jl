@@ -44,7 +44,7 @@ map(Kernel{(3,3)}(wf), a)
 
 ## TODO
 
-- boundary handling using `Union{T,Nothing}`
+- circular boundary conditions
 - syntactic sugar for determining kernel size through index access:
   `@kernel(w -> w[1] - w[0]) == Kernel{(2,),(1,)}(w -> w[1] - w[0])`
 - strided array interface for inner windows

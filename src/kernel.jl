@@ -43,14 +43,9 @@ Evaluate kernel `k` on `a` centered at index `i`.
     (k::Kernel)(w::Window)
 
 Evaluates `k` on `w`.
-If `k` does not fit within `w` and `k`'s window function leaks missing boundary
-data then an error will be thrown.
 """
 @inline function (k::Kernel)(w::Window)
     ret = k.wf(w)
-
-    isa(ret, nonmissingtype(Base.promote_op(k.wf, typeof(w)))) ||
-        throw(MissingException("evaluation of $(axes(k))-kernel on window $(axes(w)) leaks missing boundary data"))
 
     return ret
 end

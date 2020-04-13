@@ -35,7 +35,7 @@ Base.size(w::Window) = length.(axes(w))
 
     # central piece to get efficient boundary handling.
     # we rely on the compiler to constant propagate this check away
-    checkbounds(Bool, w, wi) || return missing
+    checkbounds(Bool, w, wi) || return nothing
 
     pi = position(w) + wi
 
