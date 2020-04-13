@@ -10,6 +10,15 @@ Base.ndims(k::Kernel) = length(axes(k))
 Base.size(k::Kernel) = length.(axes(k))
 
 """
+    (k::Kernel)(w::Window)
+
+Evaluates `k` on `w`.
+"""
+@inline (k::Kernel)(w::Window) = k.wf(w)
+
+# FIXME: revise the following questionable interface
+
+"""
     eltype(a::AbstractArray, k::Kernel)
 
 Infer the return type of `k` applied to a window of `a`.
@@ -38,14 +47,3 @@ Evaluate kernel `k` on `a` centered at index `i`.
 """
 @inline @propagate_inbounds Base.getindex(a::DenseArray, k::Kernel, i...) =
     k(Window(k, a, CartesianIndex(i)))
-
-"""
-    (k::Kernel)(w::Window)
-
-Evaluates `k` on `w`.
-"""
-@inline function (k::Kernel)(w::Window)
-    ret = k.wf(w)
-
-    return ret
-end
