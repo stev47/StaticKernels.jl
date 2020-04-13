@@ -1,30 +1,5 @@
 using Base: promote_op, @propagate_inbounds
 
-"""
-    Kernel{X}(wf)
-
-Create a stack-allocated kernel with axes `X`, wrapping a window function
-`wf`.
-The window function defines a reduction of values within the `X`-sized window.
-For best performance you should annotate `wf` with `@inline` and index access
-with `@inbounds`.
-
-```@example
-@inline function wf(w)
-    return @inbounds w[0,-1] + w[-1,0] + 4*w[0,0] + w[1,0] + w[0,1]
-end
-Kernel{(-1:1,-1:1)}(wf)
-```
-"""
-struct Kernel{X, F}
-    wf::F
-    function Kernel{X}(wf::F) where {X, F<:Function}
-        X isa NTuple{<:Any,UnitRange{Int}} ||
-            throw(ArgumentError("invalid axes"))
-        return new{X, F}(wf)
-    end
-end
-
 function Base.show(io::IO, ::MIME"text/plain", k::Kernel)
     println(io, "Kernel{$(axes(k))} with window function\n")
     print(code_lowered(k.wf, (AbstractArray{Any},))[1])
@@ -63,3 +38,19 @@ Evaluate kernel `k` on `a` centered at index `i`.
 """
 @inline @propagate_inbounds Base.getindex(a::DenseArray, k::Kernel, i...) =
     k(Window(k, a, CartesianIndex(i)))
+
+"""
+    (k::Kernel)(w::Window)
+
+Evaluates `k` on `w`.
+If `k` does not fit within `w` and `k`'s window function leaks missing boundary
+data then an error will be thrown.
+"""
+@inline function (k::Kernel)(w::Window)
+    ret = k.wf(w)
+
+    isa(ret, nonmissingtype(Base.promote_op(k.wf, typeof(w)))) ||
+        throw(MissingException("evaluation of $(axes(k))-kernel on window $(axes(w)) leaks missing boundary data"))
+
+    return ret
+end

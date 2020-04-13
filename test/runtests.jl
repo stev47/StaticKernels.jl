@@ -9,11 +9,13 @@ a = rand(rand(5:10, 3)...)
 dones = ntuple(i -> 1, ndims(a))
 dzeros = ntuple(i -> 0, ndims(a))
 
+@inline nonmissing(x, y...) = ismissing(x) ? nonmissing(y...) : x
+
 @testset "basics" for i in 1:ndims(a)
     ddir = ntuple(j -> Int(j == i), ndims(a))
 
     k = Kernel{UnitRange.(dzeros, ddir)}() do w
-        return w[ddir...] - w[dzeros...]
+        return nonmissing(w[ddir...] - w[dzeros...], 0)
     end
 
     @test isbits(k)
@@ -26,7 +28,7 @@ end
 
 @testset "vector" begin
     a = rand(100)
-    k = Kernel{(0:1,)}(w -> w[1] - w[0])
+    k = Kernel{(0:1,)}(w -> nonmissing(w[1] - w[0], 0))
     x = axes(a, k)
     b = map(k, a)
     c = diff(a)
@@ -36,7 +38,7 @@ end
 
 @testset "different return type" begin
     a = rand(10, 10)
-    grad = Kernel{(0:1,0:1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))
+    grad = Kernel{(0:1,0:1)}(w -> (nonmissing(w[1,0] - w[0,0], 0), nonmissing(w[0,1] - w[0,0], 0)))
 
     grada = @inferred map(grad, a)
     gx = axes(a, grad)
@@ -46,8 +48,7 @@ end
 
 @testset "window as array" begin
     a = rand(3, 3)
-    k = Kernel{(-1:1, -1:1)}(w -> sum(w))
-    w = Window(k, a, CartesianIndex(2, 2))
+    w = Window{(-1:1, -1:1)}(a, CartesianIndex(2, 2))
 
-    @test sum(w) == sum(a)
+    @test sum(Tuple(w)) == sum(a)
 end
