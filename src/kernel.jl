@@ -40,6 +40,8 @@ Returns axes along which `k` fits within `a`.
     end
 end
 
+@inline Base.size(a::AbstractArray, k::Kernel) = length.(axes(a, k))
+
 """
     getindex(a::AbstractArray, k::Kernel, i...)
 
