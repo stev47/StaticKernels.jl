@@ -1,53 +1,65 @@
-# StaticFilters
+# StaticKernels
 
-Faster, stack-allocated filter operations on arrays.
+Julia-native non-allocating kernel operations on arrays.
+Current features include
 
-- supports arbitrary dimensions
+- custom kernel functions in arbitrary dimensions
 - custom boundary handling
-- linear filters with static kernel (finite difference operators)
-- mapreduce filters (image morphology, etc.)
-- filter composability
+- filter application through `map(kernel, array)`
 - package is small and dependency free
 
 ## Usage
 
 ```julia
-using StaticFilters
-a = rand(100, 100)
+using StaticKernels
+a = rand(1000, 1000)
 
 # Laplace
 k = Kernel{(-1:1,-1:1)}(w -> w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1])
+map(k, a, inner=true)
+
+# Erosion
+k = Kernel{(-1:1,-1:1)}(w -> minimum(Tuple(w)))
+map(k, a)
+
+# Laplace, zero boundary condition
+k = Kernel{(-1:1,-1:1)}(w -> something(w[0,-1], 0.) + something(w[-1,0], 0.) - 4*w[0,0] + something(w[1,0], 0.) + something(w[0,1], 0.))
+map(k, a)
+
+# Forward-Gradient (non-skalar Kernel), neumann boundary condition
+k = Kernel{(0:1, 0:1)}(w -> (something(w[1,0], w[0,0]) - w[0,0], something(w[0,1], w[0,0]) - w[0,0]))
 map(k, a)
 ```
 
+## User Notes
 
-## Examples
+- you should use kernel functions declared with `@inline` and `@inbounds` for
+  best performance.
+- the package is aimed at small kernels, use different algorithms for larger
+  kernels (inplace formulations or fft)
+- (currently) high compilation time for larger kernels or higher dimensions for
+  boundary specializations
 
+## Implementation Notes
 
-### Non-scalar Output
+We use a statically sized array view `StaticKernels.Window` on which the
+user-defined kernel function is applied. Access outside the window size returns
+`nothing` instead of throwing an out-of-bounds error.
 
-### Fast Local Matrix Operations
+The user-supplied kernel function is specialized for all different `Windows`
+(appropriately cropped versions on boundaries) and thus infers away
+boundary-checks like `something(w[1,0], 0)` by leveraging constant propagation.
 
-```julia
-using StaticArrays, LinearAlgebra
-
-@inline function(w)
-    m = SMatrix{size(w)...}(Tuple(w))
-    return det(m)
-end
-
-a = rand(100, 100)
-map(Kernel{(3,3)}(wf), a)
-```
-
+These components together with the auto-vectorizing Julia compiler allow for
+fast execution.
 
 
 ## TODO
 
-- generic mapreduce
+- generic mapreduce to allow e.g. `sum(k, a)`
 - circular boundary conditions
-- abstract array interface for windows
-- multi-window kernels
-- strided array interface for windows
+- abstract/strided array interface for windows (blocked by julia issue)
+- multi-window kernels for e.g. `map(k, a1, a2)`
+- think about more specific kernel types and composability
 - syntactic sugar for determining kernel size through index access:
   `@kernel(w -> w[1] - w[0]) == Kernel{(2,),(1,)}(w -> w[1] - w[0])`

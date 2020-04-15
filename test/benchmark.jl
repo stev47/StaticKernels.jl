@@ -1,7 +1,7 @@
 using Test, BenchmarkTools
 
 using StaticArrays: SVector
-using StaticFilters: Kernel
+using StaticKernels: Kernel
 using NNlib: DenseConvDims, conv!
 using ImageFiltering: centered, imfilter!, Inner
 using LocalFilters: convolve!
@@ -18,8 +18,8 @@ for N in (10, 100, 1000), K in (3, 5, 7)
 
     println("Array: $(size(a)), Kernel: $(size(k))")
 
-    # StaticFilters.jl
-    print(rpad("  StaticFilters", pd))
+    # StaticKernels.jl
+    print(rpad("  StaticKernels", pd))
 
     ktuple = Tuple(k)
     @inline function wf(w)

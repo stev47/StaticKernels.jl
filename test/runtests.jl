@@ -1,7 +1,7 @@
 using Test
-using StaticFilters
+using StaticKernels
 
-using StaticFilters: Window
+using StaticKernels: Window
 
 
 a = rand(rand(5:10, 3)...)

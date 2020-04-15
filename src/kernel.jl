@@ -2,7 +2,7 @@ using Base: promote_op, @propagate_inbounds
 
 function Base.show(io::IO, ::MIME"text/plain", k::Kernel)
     println(io, "Kernel{$(axes(k))} with window function\n")
-    print(code_lowered(k.wf, (AbstractArray{Any},))[1])
+    print(code_lowered(k.f, (AbstractArray{Any},))[1])
 end
 
 Base.axes(::Kernel{X}) where X = X
@@ -14,7 +14,7 @@ Base.size(k::Kernel) = length.(axes(k))
 
 Evaluates `k` on `w`.
 """
-@inline (k::Kernel)(w::Window) = k.wf(w)
+@inline (k::Kernel)(w::Window) = k.f(w)
 
 # FIXME: revise the following questionable interface
 
@@ -24,7 +24,7 @@ Evaluates `k` on `w`.
 Infer the return type of `k` applied to a window of `a`.
 """
 Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} =
-    Base.promote_op(k.wf, Window{T,N,axes(k)})
+    Base.promote_op(k.f, Window{T,N,axes(k)})
 
 """
     axes(a::AbstractArray, k::Kernel)

@@ -1,4 +1,4 @@
-module StaticFilters
+module StaticKernels
 
 export Kernel
 export position
@@ -6,9 +6,9 @@ export position
 include("types.jl")
 
 include("window.jl")
-include("windowloop.jl")
 include("kernel.jl")
 
-include("filters.jl")
+include("loop.jl")
+include("operations.jl")
 
-end # module
+end
