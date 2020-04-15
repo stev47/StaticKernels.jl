@@ -9,7 +9,8 @@ boundaries of `a` at the current index.
 
 NOTE: It is assumed `kx` can fit inside `a`.
 """
-@generated function windowloop(f, a::AbstractArray, ::Val{kx}) where kx
+@generated function windowloop(f, a::AbstractArray, ::Val{kx},
+                               ::Val{inner}=Val(false)) where {kx, inner}
     # this assumes kx fits inside axes(x)
     wx(pos) = intersect.(kx, map((x,y) -> first(x) - y : last(x) - y, kx, pos))
 
@@ -28,6 +29,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         # lower boundary
         for i in first(kx[d]) : -1
+            inner && break
             push!(exprs, :($k = first(axes(a, $d)) + $(i - first(kx[d]))))
             push!(exprs, loop_expr((i, pos...)))
         end
@@ -40,6 +42,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         # upper boundary
         for i in 1 : last(kx[d])
+            inner && break
             push!(exprs, :($k = last(axes(a, $d)) - $(last(kx[d]) - i)))
             push!(exprs, loop_expr((i, pos...)))
         end
@@ -51,5 +54,6 @@ NOTE: It is assumed `kx` can fit inside `a`.
         # prevents allocation if f is mutating data in the caller scope
         @_inline_meta
         $(loop_expr(()))
+        return nothing
     end
 end
