@@ -1,19 +1,9 @@
 using Base: require_one_based_indexing
 
 """
-    Kernel{X}(f)
+    Kernel{X, F}
 
-Create a kernel with axes `X` wrapping a kernel function `f`.
-The window function defines a reduction of values within the `X`-sized window.
-For best performance you should annotate `f` with `@inline` and index accesses
-within using `@inbounds`.
-
-```@example
-@inline function f(w)
-    return @inbounds w[0,-1] + w[-1,0] + 4*w[0,0] + w[1,0] + w[0,1]
-end
-Kernel{(-1:1,-1:1)}(f)
-```
+A kernel object with axes `X` that is wrapping a kernel function of type `f`.
 """
 struct Kernel{X, F}
     f::F
