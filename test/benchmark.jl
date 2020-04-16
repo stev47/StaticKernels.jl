@@ -6,17 +6,20 @@ using NNlib: DenseConvDims, conv!
 using ImageFiltering: centered, imfilter!, Inner
 using LocalFilters: convolve!
 import LocalFilters
+using OffsetArrays: OffsetArray
+using LoopVectorization: @avx
 
 
 # Linear Filtering
 
-pd = 16
+pd = 19
 
 for N in (10, 100, 1000), K in (3, 5, 7)
     a = rand(N, N)
     k = rand(K, K)
 
     println("Array: $(size(a)), Kernel: $(size(k))")
+
 
     # StaticKernels.jl
     print(rpad("  StaticKernels", pd))
@@ -28,6 +31,28 @@ for N in (10, 100, 1000), K in (3, 5, 7)
     kern = Kernel{(-K÷2:K÷2, -K÷2:K÷2)}(wf)
     b1 = similar(a, size(a, kern))
     @btime map!($kern, $b1, $a, inner=true)
+
+
+    # LoopVectorization.jl
+    print(rpad("  LoopVectorization", pd))
+
+    # from discourse forum:
+    # https://discourse.julialang.org/t/ann-statickernels-jl-fast-kernel-operations-on-arrays/37658
+    function filter2davx!(out::AbstractMatrix, A::AbstractMatrix, kern)
+        @avx for J in CartesianIndices(out)
+            tmp = zero(eltype(out))
+            for I ∈ CartesianIndices(kern)
+                tmp += A[I + J] * kern[I]
+            end
+            out[J] = tmp
+        end
+        out
+    end
+    b5 = similar(a, axes(a, kern))
+    k5 = reshape(k, axes(kern))
+    @btime filter2davx!($b5, $a, $k5)
+    # weird OffsetArray broadcast problem
+    b5 = parent(b5)
 
 
     # NNlib.jl
@@ -61,5 +86,5 @@ for N in (10, 100, 1000), K in (3, 5, 7)
     b4 = b4[axes(a, kern)...]
 
 
-    @test b1 ≈ b2 ≈ b3 ≈ b4
+    @test b1 ≈ b2 ≈ b3 ≈ b4 ≈ b5
 end
