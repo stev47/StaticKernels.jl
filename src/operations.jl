@@ -3,18 +3,6 @@ function Base.map(k::Kernel, a::AbstractArray; inner=false, kwargs...)
     return map!(k, b, a; inner=inner, kwargs...)
 end
 
-function map_inner!(k::Kernel, b::AbstractArray, a::AbstractArray)
-    axes(b) == axes(a) ||
-        throw(DimensionMismatch("$(axes(b)) vs $(axes(a))"))
-
-    @inbounds @simd ivdep for i in CartesianIndices(axes(a, k))
-        w = Window{axes(k)}(a, i)
-        b[i] = k(w)
-    end
-
-    return b
-end
-
 function Base.map!(k::Kernel, b::AbstractArray, a::AbstractArray; inner=false)
     outsize = inner ? size(a, k) : size(a)
     size(b) == outsize ||
