@@ -7,7 +7,8 @@ Create a kernel with axes `X` wrapping a kernel function `f`.
 
 The kernel function `f` defines a reduction of values within an `X`-sized
 view. When the kernel is applied to data of an array `a` the kernel function
-gets called with one argument `w::Window` that provides a local view on data.
+gets called with one argument `w::Window` that provides a local view on the
+data.
 
 ```@example
 # Laplacian 3x3 Kernel (i.e. axes (-1:1, -1:1))
@@ -41,7 +42,7 @@ Base.size(k::Kernel) = length.(axes(k))
 Infer the return type of `k` applied to a window of `a`.
 """
 Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} =
-    Base.promote_op(k.f, Window{T,N,axes(k)})
+    promote_op(k.f, Window{T,N,axes(k)})
 
 """
     axes(a::AbstractArray, k::Kernel)

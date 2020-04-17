@@ -3,10 +3,11 @@ using Base: require_one_based_indexing
 """
     Kernel{X, F}
 
-A kernel object with axes `X` that is wrapping a kernel function of type `f`.
+A kernel object with axes `X` that is wrapping a kernel function of type `F`.
 """
 struct Kernel{X, F}
     f::F
+
     function Kernel{X}(f::F) where {X, F<:Function}
         X isa NTuple{<:Any,UnitRange{Int}} ||
             throw(ArgumentError("invalid axes: $X"))
@@ -17,8 +18,8 @@ end
 """
     Window{T,N,X}
 
-A stack-allocated array view with axes `X` and cartesian indexing relative to
-some position in the parent array.
+A stack-allocated array view with indexing on axes `X` relative to some
+position in the parent array.
 """
 # FIXME: https://github.com/JuliaLang/julia/pull/32105
 #struct Window{T,N,X} <: AbstractArray{T,N}

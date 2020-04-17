@@ -28,7 +28,8 @@ end
 """
     position(w::Window)::CartesianIndex
 
-Return position around `w` is centered
+Return the position of `w` (i.e. its center coordinate) within its parent
+array.
 """
 position(w::Window) = w.position
 
