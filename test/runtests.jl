@@ -21,17 +21,19 @@ dzeros = ntuple(i -> 0, ndims(a))
     x = map(k, a)
     y = diff(a, dims=i)
 
-    @test x[axes(a,k)...] == y
+    @test x[axes(a,k)...] ≈ y
 end
 
 @testset "vector" begin
     a = rand(100)
-    k = Kernel{(0:1,)}(w -> something(w[1], 0) - w[0])
+    bnd = rand()
+    k = Kernel{(0:1,)}(w -> something(w[1], bnd) - w[0], StaticKernels.BoundaryNothing())
     x = axes(a, k)
     b = map(k, a)
     c = diff(a)
 
-    @test b[x...] == c[x...]
+    @test b[x...] ≈ c[x...]
+    @test b[end] ≈ bnd - a[end]
 end
 
 @testset "different return type" begin
@@ -40,13 +42,14 @@ end
 
     grada = @inferred map(grad, a)
     gx = axes(a, grad)
-    @test diff(a, dims=1)[gx...] == [x[1] for x in grada[gx...]]
-    @test diff(a, dims=2)[gx...] == [x[2] for x in grada[gx...]]
+    @test diff(a, dims=1)[gx...] ≈ [x[1] for x in grada[gx...]]
+    @test diff(a, dims=2)[gx...] ≈ [x[2] for x in grada[gx...]]
 end
 
 @testset "window as array" begin
     a = rand(3, 3)
-    w = Window{(-1:1, -1:1)}(a, CartesianIndex(2, 2))
+    k = Kernel{(-1:1, -1:1)}(identity)
+    w = Window{(-1:1, -1:1)}(k, a, CartesianIndex(2, 2))
 
-    @test sum(Tuple(w)) == sum(a)
+    @test sum(Tuple(w)) ≈ sum(a)
 end

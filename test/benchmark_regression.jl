@@ -46,7 +46,7 @@ function laplace(n)
     k = Kernel{(-1:1,-1:1)}(@inline function f(w) @inbounds w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1] end)
     b = similar(a, size(a, k))
 
-    @mybench map!(inner=true, $k, $b, $a)
+    @mybench map!($k, $b, $a)
 end
 println("laplace")
 foreach(laplace, (1000, 3000))

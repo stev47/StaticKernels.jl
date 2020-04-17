@@ -2,6 +2,7 @@ using Base: promote_op, @propagate_inbounds
 
 """
     Kernel{X}(f)
+    Kernel{X}(f, boundary::Boundary)
 
 Create a kernel with axes `X` wrapping a kernel function `f`.
 
@@ -9,6 +10,8 @@ The kernel function `f` defines a reduction of values within an `X`-sized
 view. When the kernel is applied to data of an array `a` the kernel function
 gets called with one argument `w::Window` that provides a local view on the
 data.
+`boundary` indicates how the view behaves on the outer boundaries of `a` and
+defaults to `BoundaryNone()` which indicates to exclude the boundary.
 
 ```@example
 # Laplacian 3x3 Kernel (i.e. axes (-1:1, -1:1))
@@ -21,7 +24,7 @@ Kernel{(-1:1,-1:1)}(f)
 For best performance you should annotate the kernel function `f` with `@inline`
 and index accesses within using `@inbounds`.
 """
-function Kernel end
+Kernel{X}(f::Function) where X = Kernel{X}(f, BoundaryNone())
 
 function Base.show(io::IO, ::MIME"text/plain", k::Kernel)
     println(io, "Kernel{$(axes(k))} with window function\n")
@@ -35,6 +38,8 @@ Base.size(k::Kernel) = length.(axes(k))
 @inline (k::Kernel)(w::Window) = k.f(w)
 
 # FIXME: revise the following questionable interface
+
+boundary(k::Kernel) = k.boundary
 
 """
     eltype(a::AbstractArray, k::Kernel)
@@ -52,6 +57,8 @@ Returns axes along which `k` fits within `a`.
 @inline function Base.axes(a::AbstractArray, k::Kernel)
     ndims(a) == ndims(k) ||
         throw(DimensionMismatch("$(ndims(a)) vs $(ndims(k))"))
+
+    boundary(k) isa BoundaryNone || return axes(a)
 
     return map(axes(a), axes(k)) do ax, kx
         first(ax) - first(kx) : last(ax) - last(kx)

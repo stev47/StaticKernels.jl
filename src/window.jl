@@ -1,10 +1,12 @@
 using Base: @propagate_inbounds, _sub2ind, substrides
 
 """
-    Window{X}(a::DenseArray, pos::CartesianIndex)
+    Window{X}(k::Kernel, a::DenseArray, pos::CartesianIndex)
 
 Create a stack-allocated view on `a` with axes `X` and cartesian indexing
 relative to `pos` in the parent array.
+The window axes span at most the axes of kernel type `K` and behaviour when
+indexing outside them is determined by the boundary conditions of `K`.
 
 The user is responsible for ensuring that the parent array outlives this object
 by using e.g. `GC.@preserve`.
@@ -31,7 +33,7 @@ end
 Return the position of `w` (i.e. its center coordinate) within its parent
 array.
 """
-position(w::Window) = w.position
+Base.position(w::Window) = w.position
 
 # AbstractArray interface
 

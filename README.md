@@ -16,18 +16,18 @@ a = rand(1000, 1000)
 
 # Laplace
 k = Kernel{(-1:1,-1:1)}(w -> w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1])
-map(k, a, inner=true)
+map(k, a)
 
 # Erosion
 k = Kernel{(-1:1,-1:1)}(w -> minimum(Tuple(w)))
 map(k, a)
 
 # Laplace, zero boundary condition
-k = Kernel{(-1:1,-1:1)}(w -> something(w[0,-1], 0.) + something(w[-1,0], 0.) - 4*w[0,0] + something(w[1,0], 0.) + something(w[0,1], 0.))
+k = Kernel{(-1:1,-1:1)}(w -> something(w[0,-1], 0.) + something(w[-1,0], 0.) - 4*w[0,0] + something(w[1,0], 0.) + something(w[0,1], 0.), StaticKernels.BoundaryNothing())
 map(k, a)
 
 # Forward-Gradient (non-skalar Kernel), neumann boundary condition
-k = Kernel{(0:1, 0:1)}(w -> (something(w[1,0], w[0,0]) - w[0,0], something(w[0,1], w[0,0]) - w[0,0]))
+k = Kernel{(0:1, 0:1)}(w -> (something(w[1,0], w[0,0]) - w[0,0], something(w[0,1], w[0,0]) - w[0,0]), StaticKernels.BoundaryNothing())
 map(k, a)
 ```
 

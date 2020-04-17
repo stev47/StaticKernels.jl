@@ -42,7 +42,7 @@ for N in (10, 100, 1000), K in (3, 5, 7)
     end
     kern = Kernel{(-K÷2:K÷2, -K÷2:K÷2)}(wf)
     b1 = similar(a, size(a, kern))
-    @btime map!($kern, $b1, $a, inner=true)
+    @btime map!($kern, $b1, $a)
 
 
     # LoopVectorization.jl

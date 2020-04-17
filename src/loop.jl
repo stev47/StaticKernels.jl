@@ -1,16 +1,16 @@
 using Base: @_inline_meta
 
 """
-    windowloop(f, a::AbstractArray, Val(kx))
+    windowloop(f, k::Kernel{kx}, a::AbstractArray)
 
 Loops through `a` while calling `f(w)` at every index.
-`f` is passed a window `w` of size at most `kx`, cropped according to the
-boundaries of `a` at the current index.
+`f` is passed a kernel window `w` of size at most `kx`, potentially cropped
+according to the boundary handling of `k`.
 
 NOTE: It is assumed `kx` can fit inside `a`.
 """
-@generated function windowloop(f, a::AbstractArray, ::Val{kx},
-                               ::Val{inner}=Val(false)) where {kx, inner}
+@generated function windowloop(
+        f, kernel::Kernel{kx,<:Any,boundary}, a::AbstractArray) where {kx, boundary}
     # this assumes kx fits inside axes(x)
     wx(pos) = intersect.(kx, map((x,y) -> first(x) - y : last(x) - y, kx, pos))
 
@@ -21,7 +21,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
         if d == 0
             ks = (Symbol('k', i) for i in eachindex(kx))
             ki = :( CartesianIndex($(ks...),) )
-            return :( f( Window{$(wx(pos))}(a, $ki) ) )
+            return :( f( Window{$(wx(pos))}(kernel, a, $ki) ) )
         end
 
         exprs = Expr[]
@@ -29,7 +29,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         # lower boundary
         for i in first(kx[d]) : -1
-            inner && break
+            boundary == BoundaryNone && break
             push!(exprs, :($k = first(axes(a, $d)) + $(i - first(kx[d]))))
             push!(exprs, loop_expr((i, pos...)))
         end
@@ -42,7 +42,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         # upper boundary
         for i in 1 : last(kx[d])
-            inner && break
+            boundary == BoundaryNone && break
             push!(exprs, :($k = last(axes(a, $d)) - $(last(kx[d]) - i)))
             push!(exprs, loop_expr((i, pos...)))
         end
