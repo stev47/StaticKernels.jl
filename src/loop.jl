@@ -53,7 +53,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
     return quote
         # prevents allocation if f is mutating data in the caller scope
         @_inline_meta
-        $(loop_expr(()))
+        GC.@preserve a $(loop_expr(()))
         return nothing
     end
 end
