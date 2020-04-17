@@ -9,6 +9,18 @@ import LocalFilters
 using OffsetArrays: OffsetArray
 using LoopVectorization: @avx
 
+# from discourse forum:
+# https://discourse.julialang.org/t/ann-statickernels-jl-fast-kernel-operations-on-arrays/37658
+function filter2davx!(out::AbstractMatrix, A::AbstractMatrix, kern)
+    @avx for J in CartesianIndices(out)
+        tmp = zero(eltype(out))
+        for I ∈ CartesianIndices(kern)
+            tmp += A[I + J] * kern[I]
+        end
+        out[J] = tmp
+    end
+    out
+end
 
 # Linear Filtering
 
@@ -36,18 +48,6 @@ for N in (10, 100, 1000), K in (3, 5, 7)
     # LoopVectorization.jl
     print(rpad("  LoopVectorization", pd))
 
-    # from discourse forum:
-    # https://discourse.julialang.org/t/ann-statickernels-jl-fast-kernel-operations-on-arrays/37658
-    function filter2davx!(out::AbstractMatrix, A::AbstractMatrix, kern)
-        @avx for J in CartesianIndices(out)
-            tmp = zero(eltype(out))
-            for I ∈ CartesianIndices(kern)
-                tmp += A[I + J] * kern[I]
-            end
-            out[J] = tmp
-        end
-        out
-    end
     b5 = similar(a, axes(a, kern))
     k5 = reshape(k, axes(kern))
     @btime filter2davx!($b5, $a, $k5)
