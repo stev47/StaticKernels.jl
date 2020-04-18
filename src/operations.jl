@@ -1,11 +1,11 @@
 function Base.map(k::Kernel, a::AbstractArray)
     b = boundary(k) isa BoundaryNone ?
-        similar(a, eltype(a, k), size(a, k)) : similar(a, eltype(a, k))
+        similar(a, eltype(k, a), size(k, a)) : similar(a, eltype(k, a))
     return map!(k, b, a)
 end
 
 function Base.map!(k::Kernel, b::AbstractArray, a::AbstractArray)
-    outsize = boundary(k) isa BoundaryNone ? size(a, k) : size(a)
+    outsize = boundary(k) isa BoundaryNone ? size(k, a) : size(a)
     size(b) == outsize ||
         throw(DimensionMismatch("$(size(b)) vs $(outsize)"))
 

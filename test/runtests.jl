@@ -21,27 +21,27 @@ dzeros = ntuple(i -> 0, ndims(a))
     x = map(k, a)
     y = diff(a, dims=i)
 
-    @test x[axes(a,k)...] ≈ y
+    @test x[axes(k, a)...] ≈ y
 end
 
 @testset "vector" begin
     a = rand(100)
     bnd = rand()
     k = Kernel{(0:1,)}(w -> something(w[1], bnd) - w[0], StaticKernels.BoundaryNothing())
-    x = axes(a, k)
+    x = axes(k, a)
     b = map(k, a)
     c = diff(a)
 
-    @test b[x...] ≈ c[x...]
+    @test b[1:end-1] ≈ c
     @test b[end] ≈ bnd - a[end]
 end
 
 @testset "different return type" begin
     a = rand(10, 10)
-    grad = Kernel{(0:1,0:1)}(w -> (something(w[1,0], 0) - w[0,0], something(w[0,1], 0) - w[0,0]))
+    grad = Kernel{(0:1,0:1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))
 
     grada = @inferred map(grad, a)
-    gx = axes(a, grad)
+    gx = axes(grad, a)
     @test diff(a, dims=1)[gx...] ≈ [x[1] for x in grada[gx...]]
     @test diff(a, dims=2)[gx...] ≈ [x[2] for x in grada[gx...]]
 end

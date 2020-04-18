@@ -42,19 +42,19 @@ Base.size(k::Kernel) = length.(axes(k))
 boundary(k::Kernel) = k.boundary
 
 """
-    eltype(a::AbstractArray, k::Kernel)
+    eltype(k::Kernel, a::AbstractArray)
 
 Infer the return type of `k` applied to a window of `a`.
 """
-Base.eltype(a::AbstractArray{T,N}, k::Kernel) where {T,N} =
+Base.eltype(k::Kernel, a::AbstractArray{T,N}) where {T,N} =
     promote_op(k.f, Window{T,N,axes(k)})
 
 """
-    axes(a::AbstractArray, k::Kernel)
+    axes(k::Kernel, a::AbstractArray)
 
-Returns axes along which `k` fits within `a`.
+Returns axes along which `k` can be applied to `a`.
 """
-@inline function Base.axes(a::AbstractArray, k::Kernel)
+@inline function Base.axes(k::Kernel, a::AbstractArray)
     ndims(a) == ndims(k) ||
         throw(DimensionMismatch("$(ndims(a)) vs $(ndims(k))"))
 
@@ -66,8 +66,8 @@ Returns axes along which `k` fits within `a`.
 end
 
 """
-    size(a::AbstractArray, k::Kernel)
+    size(k::Kernel, a::AbstractArray)
 
-Returns size of `a` in which `k` can fit.
+Returns size of the cartesian region over which `k` can be applied to `a`.
 """
-@inline Base.size(a::AbstractArray, k::Kernel) = length.(axes(a, k))
+@inline Base.size(k::Kernel, a::AbstractArray) = length.(axes(k, a))
