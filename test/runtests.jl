@@ -27,7 +27,7 @@ end
 @testset "vector" begin
     a = rand(100)
     bnd = rand()
-    k = Kernel{(0:1,)}(w -> something(w[1], bnd) - w[0], StaticKernels.BoundaryNothing())
+    k = Kernel{(0:1,)}(w -> something(w[1], bnd) - w[0], StaticKernels.ExtensionNothing())
     x = axes(k, a)
     b = map(k, a)
     c = diff(a)

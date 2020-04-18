@@ -44,7 +44,7 @@ end
 function laplace(n)
     a = rand(n, n)
     k = Kernel{(-1:1,-1:1)}(@inline function f(w) @inbounds w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1] end)
-    b = similar(a, size(a, k))
+    b = similar(a, size(k, a))
 
     @mybench map!($k, $b, $a)
 end

@@ -1,30 +1,30 @@
 using Base: require_one_based_indexing
 
-abstract type Boundary end
+abstract type Extension end
 
-struct BoundaryNone <: Boundary end
-struct BoundaryNothing <: Boundary end
-struct BoundaryReplicate <: Boundary end
-struct BoundaryCircular <: Boundary end
-struct BoundarySymmetric <: Boundary end
-struct BoundaryConstant{T} <: Boundary
+struct ExtensionNone <: Extension end
+struct ExtensionNothing <: Extension end
+struct ExtensionReplicate <: Extension end
+struct ExtensionCircular <: Extension end
+struct ExtensionSymmetric <: Extension end
+struct ExtensionConstant{T} <: Extension
     value::T
 end
 
 """
-    Kernel{X,F,B}
+    Kernel{X,F,Ext}
 
 A kernel object with axes `X` that is wrapping a kernel function of type `F`
-and specifying boundary conditions `B`.
+and specifying an extension `Ext`.
 """
-struct Kernel{X,F,B}
+struct Kernel{X,F,Ext}
     f::F
-    boundary::B
+    extension::Ext
 
-    function Kernel{X}(f::F, boundary::B) where {X,B<:Boundary,F<:Function}
+    function Kernel{X}(f::F, extension::Ext) where {X,Ext<:Extension,F<:Function}
         X isa NTuple{<:Any,UnitRange{Int}} ||
             throw(ArgumentError("invalid axes: $X"))
-        return new{X,F,B}(f, boundary)
+        return new{X,F,Ext}(f, extension)
     end
 end
 

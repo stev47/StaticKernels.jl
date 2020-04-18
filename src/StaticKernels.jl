@@ -5,7 +5,7 @@ export position
 
 include("types.jl")
 
-include("boundary.jl")
+include("extension.jl")
 include("window.jl")
 include("kernel.jl")
 

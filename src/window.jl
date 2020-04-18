@@ -6,7 +6,7 @@ using Base: @propagate_inbounds, _sub2ind, substrides
 Create a stack-allocated view on `a` with axes `X` and cartesian indexing
 relative to `pos` in the parent array.
 The window axes span at most the axes of kernel type `K` and behaviour when
-indexing outside them is determined by the boundary conditions of `K`.
+indexing outside them is determined by the extension specified by `K`.
 
 The user is responsible for ensuring that the parent array outlives this object
 by using e.g. `GC.@preserve`.
@@ -58,7 +58,7 @@ end
 
     # central piece to get efficient boundary handling.
     # we rely on the compiler to constant propagate this check away
-    checkbounds(Bool, w, wi) || return getindex_boundary(w, wi, boundary(w.kernel))
+    checkbounds(Bool, w, wi) || return getindex_extension(w, wi, extension(w.kernel))
 
     return getindex_parent(w, position(w) + wi)
 end

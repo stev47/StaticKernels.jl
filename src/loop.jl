@@ -5,12 +5,12 @@ using Base: @_inline_meta
 
 Loops through `a` while calling `f(w)` at every index.
 `f` is passed a kernel window `w` of size at most `kx`, potentially cropped
-according to the boundary handling of `k`.
+according to the range of `k`.
 
 NOTE: It is assumed `kx` can fit inside `a`.
 """
 @generated function windowloop(
-        f, kernel::Kernel{kx,<:Any,boundary}, a::AbstractArray) where {kx, boundary}
+        f, kernel::Kernel{kx,<:Any,extension}, a::AbstractArray) where {kx, extension}
     # this assumes kx fits inside axes(x)
     wx(pos) = intersect.(kx, map((x,y) -> first(x) - y : last(x) - y, kx, pos))
 
@@ -29,7 +29,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         # lower boundary
         for i in first(kx[d]) : -1
-            boundary == BoundaryNone && break
+            extension == ExtensionNone && break
             push!(exprs, :($k = first(axes(a, $d)) + $(i - first(kx[d]))))
             push!(exprs, loop_expr((i, pos...)))
         end
@@ -42,7 +42,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         # upper boundary
         for i in 1 : last(kx[d])
-            boundary == BoundaryNone && break
+            extension == ExtensionNone && break
             push!(exprs, :($k = last(axes(a, $d)) - $(last(kx[d]) - i)))
             push!(exprs, loop_expr((i, pos...)))
         end
