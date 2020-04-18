@@ -64,6 +64,7 @@ fast execution.
 ## TODO
 
 - generic mapreduce to allow e.g. `sum(k, a)`
+- nicer (but type-instable) interface for kernel creation
 - abstract/strided array interface for windows (blocked by julia issue)
 - multi-window kernels for e.g. `map(k, a1, a2)`
 - think about more specific kernel types and composability
