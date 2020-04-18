@@ -4,8 +4,9 @@ abstract type Boundary end
 
 struct BoundaryNone <: Boundary end
 struct BoundaryNothing <: Boundary end
+struct BoundaryReplicate <: Boundary end
 struct BoundaryCircular <: Boundary end
-struct BoundaryMirror <: Boundary end
+struct BoundarySymmetric <: Boundary end
 struct BoundaryConstant{T} <: Boundary
     value::T
 end

@@ -41,17 +41,8 @@ Base.axes(::Window{<:Any,<:Any,X}) where X = X
 Base.ndims(w::Window) = length(axes(w))
 Base.size(w::Window) = length.(axes(w))
 
-@inline function Base.getindex(w::Window{<:Any,N}, wi::Vararg{Int,N}) where N
-    wi = CartesianIndex(wi)
-
-    # central piece to get efficient boundary handling.
-    # we rely on the compiler to constant propagate this check away
-    checkbounds(Bool, w, wi) || return nothing
-
-    pi = position(w) + wi
-
-    # translated index within parent array?
-    # (only necessary if window was created improperly)
+@inline function getindex_parent(w::Window{<:Any,N}, pi::CartesianIndex{N}) where N
+    # only necessary if window was created improperly
     @boundscheck checkbounds(Bool, CartesianIndices(w.parent_size), pi) ||
         throw(BoundsError(unsafe_wrap(Array, w.parent_ptr, w.parent_size), (pi,)))
 
@@ -59,8 +50,17 @@ Base.size(w::Window) = length.(axes(w))
     #       instructions, fix upstream?
     # pli = LinearIndices(w.parent_size)[pi]
     pli = _sub2ind(w.parent_size, Tuple(pi)...)
-
     return unsafe_load(w.parent_ptr, pli)
+end
+
+@propagate_inbounds @inline function Base.getindex(w::Window{<:Any,N}, wi::Vararg{Int,N}) where N
+    wi = CartesianIndex(wi)
+
+    # central piece to get efficient boundary handling.
+    # we rely on the compiler to constant propagate this check away
+    checkbounds(Bool, w, wi) || return getindex_boundary(w, wi, boundary(w.kernel))
+
+    return getindex_parent(w, position(w) + wi)
 end
 
 Base.setindex(w::Window, wi::Int...) = throw(ArgumentError("mutation unsupported"))
