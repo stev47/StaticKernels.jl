@@ -35,10 +35,8 @@ NOTE: It is assumed `kx` can fit inside `a`.
         end
 
         # interior
-        push!(exprs, Expr(:for,
-            # FIXME: julia bug, "$k in ..." breaks generated function
-            :($k = first(axes(a, $d)) + $(max(0, -first(kx[d]))) : last(axes(a, $d)) - $(max(0, last(kx[d])))),
-            Expr(:block, loop_expr((0, pos...)))))
+        # FIXME: julia bug, "$k in ..." breaks generated function
+        push!(exprs, Expr(:for, :($k = ilo[$d] : iup[$d]), Expr(:block, loop_expr((0, pos...)))))
 
         # upper boundary
         for i in 1 : last(kx[d])
@@ -53,6 +51,8 @@ NOTE: It is assumed `kx` can fit inside `a`.
     return quote
         # prevents allocation if f is mutating data in the caller scope
         @_inline_meta
+        ilo = first.(axes(a)) .+ $(max.(0, .-first.(kx)))
+        iup = last.(axes(a)) .- $(max.(0, last.(kx)))
         GC.@preserve a $(loop_expr(()))
         return nothing
     end
