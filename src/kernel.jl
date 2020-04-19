@@ -44,7 +44,7 @@ extension(k::Kernel) = k.extension
 """
     eltype(k::Kernel, a::AbstractArray)
 
-Infer the return type of `k` applied to a window of `a`.
+Infer the return type of `k` when applied to an interior window of `a`.
 """
 Base.eltype(k::Kernel, a::AbstractArray{T,N}) where {T,N} =
     promote_op(k.f, Window{T,N,axes(k),typeof(k)})
@@ -52,7 +52,7 @@ Base.eltype(k::Kernel, a::AbstractArray{T,N}) where {T,N} =
 """
     axes(k::Kernel, a::AbstractArray)
 
-Returns axes along which `k` can be applied to `a`.
+Return axes along which `k` can be applied to an interior window of `a`.
 """
 @inline function Base.axes(k::Kernel, a::AbstractArray)
     ndims(a) == ndims(k) ||
@@ -68,6 +68,7 @@ end
 """
     size(k::Kernel, a::AbstractArray)
 
-Returns size of the cartesian region over which `k` can be applied to `a`.
+Return size of the cartesian region over which `k` can be applied to an
+interior window of `a`.
 """
 @inline Base.size(k::Kernel, a::AbstractArray) = length.(axes(k, a))

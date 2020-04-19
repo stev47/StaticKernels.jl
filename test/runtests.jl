@@ -24,6 +24,19 @@ dzeros = ntuple(i -> 0, ndims(a))
     @test x[axes(k, a)...] ≈ y
 end
 
+@testset "type stability" begin
+    a = rand(100)
+    @testset "scalar getindex" begin
+        k = Kernel{(0:0,)}(w -> w[0], StaticKernels.ExtensionNone())
+        @test eltype(k, a) == Float64
+    end
+    @testset "window" begin
+        k = Kernel{(0:0,)}(w -> w, StaticKernels.ExtensionNone())
+        @test eltype(k, a) <: Window
+        @test isconcretetype(eltype(k, a))
+    end
+end
+
 @testset "vector" begin
     a = rand(100)
     bnd = rand()
@@ -40,7 +53,7 @@ end
     a = rand(10, 10)
     grad = Kernel{(0:1,0:1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))
 
-    grada = @inferred map(grad, a)
+    grada = map(grad, a)
     gx = axes(grad, a)
     @test diff(a, dims=1)[gx...] ≈ [x[1] for x in grada[gx...]]
     @test diff(a, dims=2)[gx...] ≈ [x[2] for x in grada[gx...]]

@@ -34,7 +34,8 @@ end
 A stack-allocated array view fit for a kernel type `K` with indexing on axes
 `X` relative to some position in the parent array.
 """
-# FIXME: https://github.com/JuliaLang/julia/pull/32105
+# FIXME: inheriting from AbstractArray prevents us from constant-propagating
+# getindex(w, i). See also https://github.com/JuliaLang/julia/pull/32105
 #struct Window{T,N,K} <: AbstractArray{T,N}
 struct Window{T,N,X,K}
     position::CartesianIndex{N}
