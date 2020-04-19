@@ -4,8 +4,8 @@ Julia-native non-allocating kernel operations on arrays.
 Current features include
 
 - custom kernel functions in arbitrary dimensions
-- custom boundary/extension handling
-- kernel acts as a function in `map`, `map!`
+- efficient custom boundary extensions
+- kernel acts as a function in e.g. `map` or `mapreduce`
 - package is small and dependency free
 
 ## Usage
@@ -22,6 +22,10 @@ map(k, a)
 # erosion
 k = Kernel{(-1:1,-1:1)}(w -> minimum(Tuple(w)))
 map(k, a)
+
+# total variation
+k = Kernel{(0:1,0:1)}(w -> abs(w[1,0] - w[0,0]) + abs(w[0,1] - w[0,0]))
+sum(k, a)
 
 # laplace, zero boundary condition
 k = Kernel{(-1:1,-1:1)}(kf, StaticKernels.ExtensionConstant(0))
@@ -63,7 +67,6 @@ fast execution.
 
 ## TODO
 
-- generic mapreduce to allow e.g. `sum(k, a)`
 - nicer (but type-instable) interface for kernel creation
 - abstract/strided array interface for windows (blocked by julia issue)
 - multi-window kernels for e.g. `map(k, a1, a2)`
