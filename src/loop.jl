@@ -9,8 +9,8 @@ according to the range of `k`.
 
 NOTE: It is assumed `kx` can fit inside `a`.
 """
-@generated function windowloop(
-        f, kernel::Kernel{kx,<:Any,extension}, a::AbstractArray) where {kx, extension}
+@generated function windowloop(f, kernel::Kernel{kx,<:Any,extension}, a::AbstractArray,
+        acc, op) where {kx, extension}
     # this assumes kx fits inside axes(x)
     wx(pos) = intersect.(kx, map((x,y) -> first(x) - y : last(x) - y, kx, pos))
 
@@ -21,7 +21,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
         if d == 0
             ks = (Symbol('k', i) for i in eachindex(kx))
             ki = :( CartesianIndex($(ks...),) )
-            return :( f( Window{$(wx(pos))}(kernel, a, $ki) ) )
+            return :( acc = op(acc, f( Window{$(wx(pos))}(kernel, a, $ki) )) )
         end
 
         exprs = Expr[]
@@ -49,11 +49,16 @@ NOTE: It is assumed `kx` can fit inside `a`.
     end
 
     return quote
-        # prevents allocation if f is mutating data in the caller scope
-        @_inline_meta
+        # FIXME: inlining prevents allocation if f is mutating data in the
+        # caller scope, but when accumulating it allocates ?!
+        $(acc <: Nothing ? :(@_inline_meta) : :() )
+
+        # lower and upper limits for interior
         ilo = first.(axes(a)) .+ $(max.(0, .-first.(kx)))
         iup = last.(axes(a)) .- $(max.(0, last.(kx)))
+
         GC.@preserve a $(loop_expr(()))
-        return nothing
+
+        return acc
     end
 end

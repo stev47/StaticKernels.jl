@@ -1,4 +1,4 @@
-using Test
+using Test, BenchmarkTools
 using StaticKernels
 
 using StaticKernels: Window
@@ -52,4 +52,13 @@ end
     w = Window{(-1:1, -1:1)}(k, a, CartesianIndex(2, 2))
 
     @test sum(Tuple(w)) ≈ sum(a)
+end
+
+@testset "memory allocations" begin
+    a = rand(100)
+    k = Kernel{(0:0,)}(w -> w[0], StaticKernels.ExtensionNone())
+    b = similar(a, size(k, a))
+
+    @test 0 == @ballocated map!($k, $b, $a)
+    @test 0 == @ballocated sum($k, $a)
 end

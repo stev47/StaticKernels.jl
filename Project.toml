@@ -3,11 +3,12 @@ uuid = "4c63dfa8-a427-4548-bd2f-4c19e87a7dc7"
 authors = ["Stephan Hilb <stephan@ecshi.net>"]
 version = "0.1.0"
 
+[compat]
+julia = "1.4.0"
+
 [extras]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
-
-[compat]
-julia = "1.4.0"
+test = ["Test", "BenchmarkTools"]
