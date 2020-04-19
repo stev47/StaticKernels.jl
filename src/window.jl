@@ -1,4 +1,4 @@
-using Base: @propagate_inbounds, _sub2ind, substrides
+using Base: @propagate_inbounds, _sub2ind
 
 """
     Window{X}(k::Kernel, a::DenseArray, pos::CartesianIndex)
@@ -12,6 +12,32 @@ The user is responsible for ensuring that the parent array outlives this object
 by using e.g. `GC.@preserve`.
 """
 function Window end
+
+# AbstractArray interface
+
+Base.axes(::Window{<:Any,<:Any,X}) where X = X
+Base.ndims(w::Window) = length(axes(w))
+Base.size(w::Window) = length.(axes(w))
+
+@propagate_inbounds Base.getindex(w::Window, wi::Int...) = getindex(w, CartesianIndex(wi))
+@propagate_inbounds @inline function Base.getindex(w::Window{<:Any,N}, wi::CartesianIndex{N}) where N
+    # central piece to get efficient boundary handling.
+    # we rely on the compiler to constant propagate this check away
+    checkbounds(Bool, w, wi) || return getindex_extension(w, wi, extension(w.kernel))
+
+    return getindex_parent(w, position(w) + wi)
+end
+
+Base.setindex(w::Window, wi::Int...) = throw(ArgumentError("mutation currently unsupported"))
+
+# Window interface
+
+"""
+    position(w::Window)::CartesianIndex
+
+Return the position of `w`, i.e. its center coordinate within the parent array.
+"""
+Base.position(w::Window) = w.position
 
 """
     Tuple(w::Window)
@@ -28,23 +54,13 @@ NOTE: this doesn't check bounds and thus assumes the window was properly
 end
 
 """
-    position(w::Window)::CartesianIndex
+    getindex_parent(w::Window, i::CartesianIndex)
 
-Return the position of `w` (i.e. its center coordinate) within its parent
-array.
+Equivalent to `parent(w)[i]` but non-allocating.
 """
-Base.position(w::Window) = w.position
-
-# AbstractArray interface
-
-Base.axes(::Window{<:Any,<:Any,X}) where X = X
-Base.ndims(w::Window) = length(axes(w))
-Base.size(w::Window) = length.(axes(w))
-
 @inline function getindex_parent(w::Window{<:Any,N}, pi::CartesianIndex{N}) where N
-    # only necessary if window was created improperly
     @boundscheck checkbounds(Bool, CartesianIndices(w.parent_size), pi) ||
-        throw(BoundsError(unsafe_wrap(Array, w.parent_ptr, w.parent_size), (pi,)))
+        throw(BoundsError(parent(w), (pi,)))
 
     # TODO: would like to use LinearIndices here, but it creates extra
     #       instructions, fix upstream?
@@ -53,31 +69,21 @@ Base.size(w::Window) = length.(axes(w))
     return unsafe_load(w.parent_ptr, pli)
 end
 
-@propagate_inbounds @inline function Base.getindex(w::Window{<:Any,N}, wi::Vararg{Int,N}) where N
-    wi = CartesianIndex(wi)
+"""
+    parent(w::Window)
 
-    # central piece to get efficient boundary handling.
-    # we rely on the compiler to constant propagate this check away
-    checkbounds(Bool, w, wi) || return getindex_extension(w, wi, extension(w.kernel))
+Return reference to parent array. This method may allocate.
+"""
+Base.parent(w::Window) = unsafe_wrap(Array, w.parent_ptr, w.parent_size)
 
-    return getindex_parent(w, position(w) + wi)
-end
-
-Base.setindex(w::Window, wi::Int...) = throw(ArgumentError("mutation unsupported"))
-
-# TODO: StridedArray interface for interior windows
-#       need restructuring since we need access to parent strides
-#Base.strides(w::Window) = substrides(strides(a), map((c, x) -> c + first(x) : c + last(x), Tuple(w.center), axes(w)))
-#Base.unsafe_convert(::Type{Ptr{T}}, ::Window{T}) = w.ptr + (firstindex(w) - 1) * sizeof(T)
-#
 # TODO: we don't want a fully fledged OffsetArray, but having similar() and
 #       copy() work would be nice
 #Base.similar(w::Window, T::Type) = similar(w, T, size(w))
 
+# Workarounds
+
 # FIXME: remove these as soon as we <:AbstractArray
 Base.length(w::Window) = prod(size(w))
 Base.keys(w::Window) = CartesianIndices(axes(w))
-@propagate_inbounds Base.getindex(w::Window, i::CartesianIndex) =
-    w[to_indices(w, (i,))...]
 @inline Base.checkbounds(::Type{Bool}, w::Window, i::CartesianIndex) =
     in(i, keys(w))
