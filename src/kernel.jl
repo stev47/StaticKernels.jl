@@ -47,7 +47,7 @@ extension(k::Kernel) = k.extension
 Infer the return type of `k` when applied to an interior window of `a`.
 """
 Base.eltype(k::Kernel, a::AbstractArray{T,N}) where {T,N} =
-    promote_op(k.f, Window{T,N,axes(k),typeof(k)})
+    promote_op(k.f, Window{T,N,axes(k),typeof(k),typeof(a)})
 
 """
     axes(k::Kernel, a::AbstractArray)

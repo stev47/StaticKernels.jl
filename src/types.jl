@@ -1,5 +1,3 @@
-using Base: require_one_based_indexing
-
 abstract type Extension end
 
 struct ExtensionNone <: Extension end
@@ -37,15 +35,12 @@ A stack-allocated array view fit for a kernel type `K` with indexing on axes
 # FIXME: inheriting from AbstractArray prevents us from constant-propagating
 # getindex(w, i). See also https://github.com/JuliaLang/julia/pull/32105
 #struct Window{T,N,K} <: AbstractArray{T,N}
-struct Window{T,N,X,K}
+struct Window{T,N,X,K,A}
     position::CartesianIndex{N}
-    parent::Array{T,N}
+    parent::A
     kernel::K
 
-    # TODO: relax to StridedArrays
-    function Window{X}(k::Kernel, a::DenseArray{T,N}, pos::CartesianIndex{N}) where {T,N,X}
-        # because we use Base._sub2ind
-        require_one_based_indexing(a)
-        return new{T,N,X,typeof(k)}(pos, a, k)
+    function Window{X}(k::Kernel, a::AbstractArray{T,N}, pos::CartesianIndex{N}) where {T,N,X}
+        return new{T,N,X,typeof(k),typeof(a)}(pos, a, k)
     end
 end
