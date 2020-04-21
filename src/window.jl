@@ -28,7 +28,14 @@ Base.size(w::Window) = length.(axes(w))
     return getindex_parent(w, position(w) + wi)
 end
 
-Base.setindex(w::Window, wi::Int...) = throw(ArgumentError("mutation currently unsupported"))
+@propagate_inbounds Base.setindex!(w::Window, x, wi::Int...) = setindex!(w, x, CartesianIndex(wi))
+@propagate_inbounds @inline function Base.setindex!(w::Window{<:Any,N}, x, wi::CartesianIndex{N}) where N
+    # central piece to get efficient boundary handling.
+    # we rely on the compiler to constant propagate this check away
+    checkbounds(Bool, w, wi) || return setindex_extension!(w, x, wi, extension(w.kernel))
+
+    return setindex_parent!(w, x, position(w) + wi)
+end
 
 # Window interface
 
@@ -58,15 +65,27 @@ end
 
 Equivalent to `parent(w)[i]` but non-allocating.
 """
-@inline function getindex_parent(w::Window{<:Any,N}, pi::CartesianIndex{N}) where N
+@propagate_inbounds @inline function getindex_parent(w::Window{<:Any,N}, pi::CartesianIndex{N}) where N
+    return unsafe_load(w.parent_ptr, _cart2lin(w, pi))
+end
+
+"""
+    setindex_parent!(w::Window, x, i::CartesianIndex)
+
+Equivalent to `parent(w)[i] = x` but non-allocating.
+"""
+@propagate_inbounds @inline function setindex_parent!(w::Window{<:Any,N}, x, pi::CartesianIndex{N}) where N
+    return unsafe_store!(w.parent_ptr, x, _cart2lin(w, pi))
+end
+
+@inline function _cart2lin(w::Window, pi)
     @boundscheck checkbounds(Bool, CartesianIndices(w.parent_size), pi) ||
         throw(BoundsError(parent(w), (pi,)))
 
     # TODO: would like to use LinearIndices here, but it creates extra
     #       instructions, fix upstream?
-    # pli = LinearIndices(w.parent_size)[pi]
-    pli = _sub2ind(w.parent_size, Tuple(pi)...)
-    return unsafe_load(w.parent_ptr, pli)
+    # return LinearIndices(w.parent_size)[pi]
+    return _sub2ind(w.parent_size, Tuple(pi)...)
 end
 
 """
