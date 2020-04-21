@@ -50,3 +50,10 @@ function laplace(n)
 end
 println("laplace")
 foreach(laplace, (1000, 3000))
+
+a = rand(1000, 1000)
+@inline kf(w) = @inbounds w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1]
+k = Kernel{(-1:1,-1:1)}(kf, StaticKernels.ExtensionConstant(0))
+b = similar(a, size(k, a))
+
+@mybench map!($k, $b, $a)
