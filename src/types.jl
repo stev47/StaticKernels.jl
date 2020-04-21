@@ -39,14 +39,13 @@ A stack-allocated array view fit for a kernel type `K` with indexing on axes
 #struct Window{T,N,K} <: AbstractArray{T,N}
 struct Window{T,N,X,K}
     position::CartesianIndex{N}
-    parent_ptr::Ptr{T}
-    parent_size::NTuple{N,Int}
+    parent::Array{T,N}
     kernel::K
 
     # TODO: relax to StridedArrays
     function Window{X}(k::Kernel, a::DenseArray{T,N}, pos::CartesianIndex{N}) where {T,N,X}
         # because we use Base._sub2ind
         require_one_based_indexing(a)
-        return new{T,N,X,typeof(k)}(pos, pointer(a), size(a), k)
+        return new{T,N,X,typeof(k)}(pos, a, k)
     end
 end

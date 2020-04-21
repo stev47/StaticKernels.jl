@@ -7,9 +7,6 @@ Create a stack-allocated view on `a` with axes `X` and cartesian indexing
 relative to `pos` in the parent array.
 The window axes span at most the axes of kernel type `K` and behaviour when
 indexing outside them is determined by the extension specified by `K`.
-
-The user is responsible for ensuring that the parent array outlives this object
-by using e.g. `GC.@preserve`.
 """
 function Window end
 
@@ -25,7 +22,7 @@ Base.size(w::Window) = length.(axes(w))
     # we rely on the compiler to constant propagate this check away
     checkbounds(Bool, w, wi) || return getindex_extension(w, wi, extension(w.kernel))
 
-    return getindex_parent(w, position(w) + wi)
+    return parent(w)[position(w) + wi]
 end
 
 @propagate_inbounds Base.setindex!(w::Window, x, wi::Int...) = setindex!(w, x, CartesianIndex(wi))
@@ -34,7 +31,7 @@ end
     # we rely on the compiler to constant propagate this check away
     checkbounds(Bool, w, wi) || return setindex_extension!(w, x, wi, extension(w.kernel))
 
-    return setindex_parent!(w, x, position(w) + wi)
+    return parent(w)[position(w) + wi] = x
 end
 
 # Window interface
@@ -61,39 +58,11 @@ NOTE: this doesn't check bounds and thus assumes the window was properly
 end
 
 """
-    getindex_parent(w::Window, i::CartesianIndex)
-
-Equivalent to `parent(w)[i]` but non-allocating.
-"""
-@propagate_inbounds @inline function getindex_parent(w::Window{<:Any,N}, pi::CartesianIndex{N}) where N
-    return unsafe_load(w.parent_ptr, _cart2lin(w, pi))
-end
-
-"""
-    setindex_parent!(w::Window, x, i::CartesianIndex)
-
-Equivalent to `parent(w)[i] = x` but non-allocating.
-"""
-@propagate_inbounds @inline function setindex_parent!(w::Window{<:Any,N}, x, pi::CartesianIndex{N}) where N
-    return unsafe_store!(w.parent_ptr, x, _cart2lin(w, pi))
-end
-
-@inline function _cart2lin(w::Window, pi)
-    @boundscheck checkbounds(Bool, CartesianIndices(w.parent_size), pi) ||
-        throw(BoundsError(parent(w), (pi,)))
-
-    # TODO: would like to use LinearIndices here, but it creates extra
-    #       instructions, fix upstream?
-    # return LinearIndices(w.parent_size)[pi]
-    return _sub2ind(w.parent_size, Tuple(pi)...)
-end
-
-"""
     parent(w::Window)
 
 Return reference to parent array. This method may allocate.
 """
-Base.parent(w::Window) = unsafe_wrap(Array, w.parent_ptr, w.parent_size)
+Base.parent(w::Window) = w.parent
 
 # TODO: we don't want a fully fledged OffsetArray, but having similar() and
 #       copy() work would be nice

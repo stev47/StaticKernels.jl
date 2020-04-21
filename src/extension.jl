@@ -29,33 +29,33 @@ Depending on the extension a call to this function may be a no-op.
 
 @inline function getindex_extension(w, wi, ext::ExtensionReplicate)
     pi = position(w) + wi
-    pimod = CartesianIndex(clamp.(Tuple(pi), ntuple(_->1, Val(length(wi))), w.parent_size))
-    return getindex_parent(w, pimod)
+    pimod = CartesianIndex(clamp.(Tuple(pi), ntuple(_->1, Val(length(wi))), size(parent(w))))
+    return parent(w)[pimod]
 end
 @inline function setindex_extension!(w, x, wi, ext::ExtensionReplicate)
     pi = position(w) + wi
-    pimod = CartesianIndex(clamp.(Tuple(pi), ntuple(_->1, Val(length(wi))), w.parent_size))
-    return setindex_parent!(w, x, pimod)
+    pimod = CartesianIndex(clamp.(Tuple(pi), ntuple(_->1, Val(length(wi))), size(parent(w))))
+    return parent(w)[pimod] = x
 end
 
 @inline function getindex_extension(w, wi, ext::ExtensionCircular)
     pi = position(w) + wi
-    pimod = CartesianIndex(mod1.(Tuple(pi), w.parent_size))
-    return getindex_parent(w, pimod)
+    pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
+    return parent(w)[pimod]
 end
 @inline function setindex_extension!(w, x, wi, ext::ExtensionCircular)
     pi = position(w) + wi
-    pimod = CartesianIndex(mod1.(Tuple(pi), w.parent_size))
-    return setindex_parent!(w, x, pimod)
+    pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
+    return parent(w)[pimod] = x
 end
 
 @inline function getindex_extension(w, wi, ext::ExtensionSymmetric)
     pi = position(w) - wi
-    pimod = CartesianIndex(mod1.(Tuple(pi), w.parent_size))
-    return getindex_parent(w, pimod)
+    pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
+    return parent(w)[pimod]
 end
 @inline function setindex_extension!(w, x, wi, ext::ExtensionSymmetric)
     pi = position(w) - wi
-    pimod = CartesianIndex(mod1.(Tuple(pi), w.parent_size))
-    return setindex_parent!(w, x, pimod)
+    pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
+    return parent(w)[pimod] = x
 end

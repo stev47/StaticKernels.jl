@@ -48,8 +48,6 @@ sum(k, a)
 
 ## User Notes
 
-- using/storing the window beyond the kernel operation itself is considered
-  unsafe, see #2
 - for best performance you should annotate kernel functions with `@inline` and
   `@inbounds`
 - the package is aimed at small kernels, use different algorithms for larger
