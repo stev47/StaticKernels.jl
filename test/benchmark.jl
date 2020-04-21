@@ -41,14 +41,14 @@ for N in (10, 100, 1000), K in (3, 5, 7)
         return sum(SVector(Tuple(w) .* ktuple))
     end
     kern = Kernel{(-K÷2:K÷2, -K÷2:K÷2)}(wf)
-    b1 = similar(a, size(a, kern))
+    b1 = similar(a, size(kern, a))
     @btime map!($kern, $b1, $a)
 
 
     # LoopVectorization.jl
     print(rpad("  LoopVectorization", pd))
 
-    b5 = similar(a, axes(a, kern))
+    b5 = similar(a, axes(kern, a))
     k5 = reshape(k, axes(kern))
     @btime filter2davx!($b5, $a, $k5)
     # weird OffsetArray broadcast problem
@@ -59,7 +59,7 @@ for N in (10, 100, 1000), K in (3, 5, 7)
     print(rpad("  NNlib", pd))
 
     ar = reshape(a, (size(a)..., 1, 1))
-    b2 = similar(a, (size(a, kern)..., 1, 1))
+    b2 = similar(a, (size(kern, a)..., 1, 1))
     kr = reshape(k, (size(k)..., 1, 1))
     cdims = DenseConvDims(ar, kr; stride=1, padding=0, dilation=1, flipkernel=true)
     @btime conv!($b2, $ar, $kr, $cdims)
@@ -68,7 +68,7 @@ for N in (10, 100, 1000), K in (3, 5, 7)
     # ImageFiltering.jl
     print(rpad("  ImageFiltering", pd))
 
-    b3 = similar(a, axes(a, kern))
+    b3 = similar(a, axes(kern, a))
     kc = centered(k)
     @btime imfilter!($b3, $a, $kc, Inner())
     # weird OffsetArray broadcast problem
@@ -83,7 +83,7 @@ for N in (10, 100, 1000), K in (3, 5, 7)
     kr = LocalFilters.Kernel(reverse(reverse(k, dims=1), dims=2))
     @btime convolve!($b4, $a, $kr)
     # no way to only compute inner part
-    b4 = b4[axes(a, kern)...]
+    b4 = b4[axes(kern, a)...]
 
 
     @test b1 ≈ b2 ≈ b3 ≈ b4 ≈ b5
