@@ -8,6 +8,9 @@ Current features include
 - kernel acts as a function in e.g. `map` or `mapreduce`
 - package is small and dependency free
 
+This package is not a zoo of different kernels and filters, but instead enables
+you to write them easily and efficiently yourself.
+
 ## Usage
 
 ```julia
@@ -45,6 +48,8 @@ sum(k, a)
 
 ## User Notes
 
+- using/storing the window beyond the kernel operation itself is considered
+  unsafe, see #2
 - for best performance you should annotate kernel functions with `@inline` and
   `@inbounds`
 - the package is aimed at small kernels, use different algorithms for larger
