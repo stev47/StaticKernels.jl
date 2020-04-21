@@ -32,6 +32,33 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
             @test a[c + i] == w[i]
         end
     end
+
+    @testset "extensions" begin
+        k = Kernel{(-1:1, -1:1)}(w -> sum(Tuple(w)), StaticKernels.ExtensionNone())
+        @test size(map(k, a)) == size(k, a)
+
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0] + w[0,0], StaticKernels.ExtensionNothing())
+        @test_throws MethodError map(k, a)
+        k = Kernel{(-1:1, -1:1)}(w -> something(w[1,0], 0), StaticKernels.ExtensionNothing())
+        @test size(map(k, a)) == size(k, a)
+        @test all(map(k, a)[end, :] .== 0)
+
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionReplicate())
+        @test size(map(k, a)) == size(k, a)
+        @test all(map(k, a)[end, :] .== a[end, :])
+
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionCircular())
+        @test size(map(k, a)) == size(k, a)
+        @test all(map(k, a)[end, :] .== a[begin, :])
+
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionSymmetric())
+        @test size(map(k, a)) == size(k, a)
+        @test all(map(k, a)[end, :] .== a[end-1, :])
+
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionConstant(0))
+        @test size(map(k, a)) == size(k, a)
+        @test all(map(k, a)[end, :] .== 0)
+    end
 end
 
 @testset "type stability" begin
@@ -56,14 +83,20 @@ end
 
 @testset "memory allocations" begin
     a = rand(100)
-    k = Kernel{(0:0,)}(w -> w[0], StaticKernels.ExtensionNone())
+    ks = [
+        Kernel{(0:0,)}(w -> w[0], StaticKernels.ExtensionNone()),
+        Kernel{(0:0,)}(w -> something(w[1], 0), StaticKernels.ExtensionNothing()),
+        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionReplicate()),
+        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionCircular()),
+        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionSymmetric()),
+        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionConstant(0))]
 
-    @testset "map!" begin
+    @testset "map!" for k in ks
         b = similar(a, size(k, a))
         @test 0 == @ballocated map!($k, $b, $a)
     end
 
-    @testset "sum!" begin
+    @testset "sum!" for k in ks
         @test 0 == @ballocated sum($k, $a)
     end
 end
