@@ -76,4 +76,4 @@ fast execution.
 - multi-window kernels for e.g. `map(k, a1, a2)`
 - think about more specific kernel types and composability
 - syntactic sugar for determining kernel size through index access:
-  `@kernel(w -> w[1] - w[0]) == Kernel{(2,),(1,)}(w -> w[1] - w[0])`
+  `@kernel(w -> w[1] - w[0]) == Kernel{(0:1,)}(w -> w[1] - w[0])`
