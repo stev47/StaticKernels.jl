@@ -6,3 +6,10 @@ sed -i Project.toml -e "s/^version = .*/version = \"$new_version\"/g"
 
 git add Project.toml
 git commit -m "update version to $new_version"
+
+commit="$(git rev-parse HEAD)"
+
+echo "After pushing to github run the following command to trigger package registration:"
+tee <<EOF
+    jq -n '{body: "@JuliaRegistrator register"}' | curl --user "stev47:\$(pass github@stev47)" --data @- https://api.github.com/repos/stev47/StaticKernels.jl/commits/$commit/comments
+EOF
