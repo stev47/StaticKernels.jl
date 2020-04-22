@@ -1,0 +1,8 @@
+#!/bin/sh -eu
+old_version="$1"
+new_version="$2"
+
+sed -i Project.toml -e "s/^version = .*/version = \"$new_version\"/g"
+
+git add Project.toml
+git commit -m "update version to $new_version"
