@@ -1,4 +1,4 @@
-using Base: @propagate_inbounds, _sub2ind
+using Base: @propagate_inbounds, @_inline_meta
 
 """
     Window{X}(k::Kernel, a::DenseArray, pos::CartesianIndex)
@@ -51,11 +51,8 @@ Create a tuple from the statically sized window `w`.
 NOTE: this doesn't check bounds and thus assumes the window was properly
       created.
 """
-@inline function Base.Tuple(w::Window{T}) where T
-    ci = eachindex(w)
-    @inline function f(i) @inbounds w[ci[i]]::T end
-    return ntuple(f, Val(prod(size(w))))
-end
+@generated Base.Tuple(w::Window) =
+    :( @_inline_meta; @inbounds ($((:(w[$i]) for i in CartesianIndices(w.parameters[3]))...),) )
 
 """
     parent(w::Window)

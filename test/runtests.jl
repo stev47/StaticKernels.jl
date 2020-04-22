@@ -89,14 +89,16 @@ end
         Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionReplicate()),
         Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionCircular()),
         Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionSymmetric()),
-        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionConstant(0))]
+        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionConstant(0)),
+        Kernel{(0:1,)}(w -> Tuple(w), StaticKernels.ExtensionNone()),
+        ]
 
     @testset "map!" for k in ks
-        b = similar(a, size(k, a))
+        b = similar(a, eltype(k, a), size(k, a))
         @test 0 == @ballocated map!($k, $b, $a)
     end
 
-    @testset "sum!" for k in ks
+    @testset "sum!" for k in ks[1:6]
         @test 0 == @ballocated sum($k, $a)
     end
 end
