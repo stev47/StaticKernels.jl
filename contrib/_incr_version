@@ -11,5 +11,5 @@ commit="$(git rev-parse HEAD)"
 
 echo "After pushing to github run the following command to trigger package registration:"
 tee <<EOF
-    jq -n '{body: "@JuliaRegistrator register"}' | curl --user "stev47:\$(pass github@stev47)" --data @- https://api.github.com/repos/stev47/StaticKernels.jl/commits/$commit/comments
+    jq -n '{body: "@JuliaRegistrator register"}' | curl -H "Authorization: token \$(pass github@token-cli)" --data @- https://api.github.com/repos/stev47/StaticKernels.jl/commits/$commit/comments
 EOF
