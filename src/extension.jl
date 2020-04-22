@@ -1,3 +1,5 @@
+using Base: @propagate_inbounds
+
 """
     getindex_extension(w::Window, wi::CartesianCoordinate, ext::Extension)
 
@@ -27,34 +29,34 @@ Depending on the extension a call to this function may be a no-op.
 @inline getindex_extension(_, _, ext::ExtensionConstant) = ext.value
 @inline setindex_extension!(_, _, _, ext::ExtensionConstant) = ext.value
 
-@inline function getindex_extension(w, wi, ext::ExtensionReplicate)
+@propagate_inbounds @inline function getindex_extension(w, wi, ext::ExtensionReplicate)
     pi = position(w) + wi
     pimod = CartesianIndex(clamp.(Tuple(pi), ntuple(_->1, Val(length(wi))), size(parent(w))))
     return parent(w)[pimod]
 end
-@inline function setindex_extension!(w, x, wi, ext::ExtensionReplicate)
+@propagate_inbounds @inline function setindex_extension!(w, x, wi, ext::ExtensionReplicate)
     pi = position(w) + wi
     pimod = CartesianIndex(clamp.(Tuple(pi), ntuple(_->1, Val(length(wi))), size(parent(w))))
     return parent(w)[pimod] = x
 end
 
-@inline function getindex_extension(w, wi, ext::ExtensionCircular)
+@propagate_inbounds @inline function getindex_extension(w, wi, ext::ExtensionCircular)
     pi = position(w) + wi
     pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
     return parent(w)[pimod]
 end
-@inline function setindex_extension!(w, x, wi, ext::ExtensionCircular)
+@propagate_inbounds @inline function setindex_extension!(w, x, wi, ext::ExtensionCircular)
     pi = position(w) + wi
     pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
     return parent(w)[pimod] = x
 end
 
-@inline function getindex_extension(w, wi, ext::ExtensionSymmetric)
+@propagate_inbounds @inline function getindex_extension(w, wi, ext::ExtensionSymmetric)
     pi = position(w) - wi
     pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
     return parent(w)[pimod]
 end
-@inline function setindex_extension!(w, x, wi, ext::ExtensionSymmetric)
+@propagate_inbounds @inline function setindex_extension!(w, x, wi, ext::ExtensionSymmetric)
     pi = position(w) - wi
     pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
     return parent(w)[pimod] = x

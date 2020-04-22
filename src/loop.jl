@@ -35,7 +35,6 @@ NOTE: It is assumed `kx` can fit inside `a`.
         end
 
         # interior
-        # FIXME: julia bug, "$k in ..." breaks generated function
         push!(exprs, Expr(:for, :($k = ilo[$d] : iup[$d]), Expr(:block, loop_expr((0, pos...)))))
 
         # upper boundary
@@ -57,7 +56,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
         ilo = first.(axes(a)) .+ $(max.(0, .-first.(kx)))
         iup = last.(axes(a)) .- $(max.(0, last.(kx)))
 
-        GC.@preserve a $(loop_expr(()))
+        $(loop_expr(()))
 
         return acc
     end
