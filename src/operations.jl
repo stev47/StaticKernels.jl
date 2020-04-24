@@ -18,6 +18,8 @@ function Base.mapreduce(k::Kernel, op, a::AbstractArray;
     dims == Colon() ||
         throw(ArgumentError("dimension-wise reduction currently unsupported"))
 
-    @inline f(w) = @inbounds k(w)
-    return windowloop(f, k, a, init, op)
+    return mapfoldl(k, op, a; init=init)
 end
+
+Base.mapfoldl(k::Kernel, op, a::AbstractArray;
+        init=Base.reduce_empty(op, eltype(k, a))) = windowloop(k, k, a, init, op)

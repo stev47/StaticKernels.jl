@@ -59,6 +59,11 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         @test size(map(k, a)) == size(k, a)
         @test all(map(k, a)[end, :] .== 0)
     end
+
+    @testset "mapreduce" begin
+        k = Kernel{(0:1, 0:0)}(w -> sum(Tuple(w)))
+        @test sum(k, a) ≈ sum(a[1:end-1,:]) + sum(a[2:end,:])
+    end
 end
 
 @testset "type stability" begin
