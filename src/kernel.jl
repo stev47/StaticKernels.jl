@@ -10,8 +10,8 @@ The kernel function `f` defines a reduction of values within an `X`-sized
 view. When the kernel is applied to data of an array `a` the kernel function
 gets called with one argument `w::Window` that provides a local view on the
 data.
-`extension` indicates how the view behaves when indexed outside its axes and
-defaults to `ExtensionNone()` which throws.
+`extension` indicates how the view behaves when `a` would be accessed outside
+its axes and defaults to `ExtensionNone()` which throws.
 
 ```@example
 # Laplacian 3x3 Kernel (i.e. axes (-1:1, -1:1))
@@ -34,6 +34,7 @@ end
 Base.axes(::Kernel{X}) where X = X
 Base.ndims(k::Kernel) = length(axes(k))
 Base.size(k::Kernel) = length.(axes(k))
+Base.keys(k::Kernel) = CartesianIndices(axes(k))
 
 @inline (k::Kernel)(w::Window) = k.f(w)
 
@@ -49,10 +50,13 @@ Infer the return type of `k` when applied to an interior window of `a`.
 Base.eltype(k::Kernel, a::AbstractArray{T,N}) where {T,N} =
     promote_op(k.f, Window{T,N,axes(k),typeof(k),typeof(a)})
 
+Base.eltype(k::Kernel{<:Any,<:Any,ExtensionConstant{TK}}, a::AbstractArray{T,N}) where {TK,T,N} =
+    Base.promote_type(TK, promote_op(k.f, Window{T,N,axes(k),typeof(k),typeof(a)}))
+
 """
     axes(k::Kernel, a::AbstractArray)
 
-Return axes along which `k` can be applied to an interior window of `a`.
+Return axes along which `k` can be applied to a window of `a`.
 """
 @inline function Base.axes(k::Kernel, a::AbstractArray)
     ndims(a) == ndims(k) ||
@@ -68,7 +72,7 @@ end
 """
     size(k::Kernel, a::AbstractArray)
 
-Return size of the cartesian region over which `k` can be applied to an
-interior window of `a`.
+Return size of the cartesian region over which `k` can be applied to a window
+of `a`.
 """
 @inline Base.size(k::Kernel, a::AbstractArray) = length.(axes(k, a))

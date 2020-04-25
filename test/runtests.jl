@@ -56,8 +56,12 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         @test all(map(k, a)[end, :] .== a[end-1, :])
 
         k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionConstant(0))
+        @test eltype(k, a) == Union{eltype(a)}
         @test size(map(k, a)) == size(k, a)
         @test all(map(k, a)[end, :] .== 0)
+
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionConstant(missing))
+        @test eltype(k, a) == Union{Missing,eltype(a)}
     end
 
     @testset "mapreduce" begin
