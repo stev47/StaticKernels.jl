@@ -27,13 +27,14 @@ struct Kernel{X,F,Ext}
 end
 
 """
-    Window{T,N,X,K}
+    Window{T,N,X,K,A}
 
 A stack-allocated array view fit for a kernel type `K` with indexing on axes
 `X` relative to some position in the parent array.
 """
 # FIXME: inheriting from AbstractArray prevents us from constant-propagating
-# getindex(w, i). See also https://github.com/JuliaLang/julia/pull/32105
+# getindex(w, i). See also https://github.com/JuliaLang/julia/issues/35531
+#
 #struct Window{T,N,K} <: AbstractArray{T,N}
 struct Window{T,N,X,K,A}
     position::CartesianIndex{N}
