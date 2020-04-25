@@ -1,0 +1,12 @@
+image: archlinux
+packages:
+  - julia
+sources:
+  - https://github.com/stev47/StaticKernels.jl
+tasks:
+  - instantiate: |
+      cd StaticKernels.jl
+      julia --color=yes --project=. -e "using Pkg; Pkg.instantiate()"
+  - test: |
+      cd StaticKernels.jl
+      julia --color=yes --project=. -e "using Pkg; Pkg.test()"
