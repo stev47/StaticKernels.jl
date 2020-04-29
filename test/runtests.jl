@@ -29,7 +29,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         @test eltype(w) == eltype(a)
 
         # getindex / setindex
-        for i in CartesianIndices(axes(w))
+        for i in CartesianIndices(w)
             @inferred w[i]
             @test w[i] == a[c + i]
             w[i] = b[c + i]

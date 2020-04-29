@@ -95,7 +95,8 @@ end
 Base.ndims(w::Window) = length(axes(w))
 Base.eltype(w::Window{T}) where T = T
 Base.length(w::Window) = prod(size(w))
-Base.keys(w::Window) = CartesianIndices(axes(w))
+Base.CartesianIndices(w::Window) = CartesianIndices(axes(w))
+Base.keys(w::Window) = CartesianIndices(w)
 @inline Base.checkbounds(::Type{Bool}, w::Window, i::CartesianIndex) =
     in(i, keys(w))
 #@inline function Base.iterate(w::Window, state=(eachindex(w),))
