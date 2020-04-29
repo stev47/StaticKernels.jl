@@ -24,13 +24,20 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         k = Kernel{(-1:1, -1:1)}(identity)
         w = Window{axes(k)}(k, a, c)
 
+        # AbstractArray interface
+        @test ndims(w) == ndims(k)
+        @test eltype(w) == eltype(a)
+
         # getindex / setindex
-        for i in CartesianIndices(axes(k))
+        for i in CartesianIndices(axes(w))
             @inferred w[i]
             @test w[i] == a[c + i]
             w[i] = b[c + i]
             @test a[c + i] == w[i]
         end
+
+        # iteration
+        @test_broken sum(v for v in w) == sum(a[1:3, 1:3])
     end
 
     @testset "extensions" begin

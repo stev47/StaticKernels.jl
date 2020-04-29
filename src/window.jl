@@ -13,14 +13,11 @@ trimmed.
 """
 function Window end
 
+
 # AbstractArray interface
 
 Base.axes(w::Window) = extension(w.kernel) isa ExtensionNothing ? axes_inner(w) : axes(w.kernel)
-Base.ndims(w::Window) = length(axes(w))
 Base.size(w::Window) = length.(axes(w))
-
-@inline checkbounds_inner(::Type{Bool}, w::Window, i::CartesianIndex) =
-    in(i, CartesianIndices(axes_inner(w)))
 
 @propagate_inbounds Base.getindex(w::Window, wi::Int...) = getindex(w, CartesianIndex(wi))
 @propagate_inbounds @inline function Base.getindex(w::Window{<:Any,N}, wi::CartesianIndex{N}) where N
@@ -40,7 +37,24 @@ end
     return parent(w)[position(w) + wi] = x
 end
 
+
 # Window interface
+
+"""
+    checkbounds_inner(Bool, w::Window, i::CartesianIndex)
+
+Return true if `i` indexes `w`'s parent in the interior and false if an
+extension would be involved.
+"""
+@inline checkbounds_inner(::Type{Bool}, w::Window, i::CartesianIndex) =
+    in(i, CartesianIndices(axes_inner(w)))
+
+"""
+    parent(w::Window)
+
+Return reference to parent array.
+"""
+Base.parent(w::Window) = w.parent
 
 """
     axes_inner(w::Window)
@@ -73,21 +87,19 @@ NOTE: this doesn't check bounds and thus assumes the window was properly
     return :( @_inline_meta; @inbounds ($((:(w[$i]) for i in CartesianIndices(_axes(w)))...),) )
 end
 
-"""
-    parent(w::Window)
 
-Return reference to parent array. This method may allocate.
-"""
-Base.parent(w::Window) = w.parent
+# Set of workarounds for not being able to subtype AbstractArray
+#   see also `src/types.jl`
+#   TODO: remove these as soon as Window <: AbstractArray
 
-# TODO: we don't want a fully fledged OffsetArray, but having similar() and
-#       copy() work would be nice
-#Base.similar(w::Window, T::Type) = similar(w, T, size(w))
-
-# Workarounds
-
-# FIXME: remove these as soon as we <:AbstractArray
+Base.ndims(w::Window) = length(axes(w))
+Base.eltype(w::Window{T}) where T = T
 Base.length(w::Window) = prod(size(w))
 Base.keys(w::Window) = CartesianIndices(axes(w))
 @inline Base.checkbounds(::Type{Bool}, w::Window, i::CartesianIndex) =
     in(i, keys(w))
+#@inline function Base.iterate(w::Window, state=(eachindex(w),))
+#    y = iterate(state...)
+#    y === nothing && return nothing
+#    w[y[1]], (state[1], Base.tail(y)...)
+#end
