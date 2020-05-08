@@ -6,7 +6,7 @@ export extend
 include("types.jl")
 
 include("extension.jl")
-include("extendedarray.jl")
+include("extensionarray.jl")
 include("window.jl")
 include("kernel.jl")
 
