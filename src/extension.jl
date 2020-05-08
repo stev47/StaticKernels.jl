@@ -1,5 +1,7 @@
 using Base: @propagate_inbounds
 
+eltype_extension(a::AbstractArray) = eltype(a)
+
 @inline index_extension(_, _, ext::Extension) =
     throw(ArgumentError("index_extension() undefined for extension $ext"))
 
@@ -30,9 +32,16 @@ Store the value `x` for an indexing operation on `w` with relative index `wi`
 respecting the extension behaviour `ext`.
 Users may define their own extension behaviour by defining additional methods
 for this function.
-Depending on the extension a call to this function may be a no-op.
+Depending on the extension a call to this function may be non-sensical and thus
+may be implemented as a no-op.
 """
 setindex_extension!
+
+@propagate_inbounds getindex_extension(w::Window, wi) =
+    getindex_extension(parent(w), position(w) + wi)
+
+@propagate_inbounds setindex_extension!(w::Window, x, wi) =
+    setindex_extension!(parent(w), x, position(w) + wi)
 
 @inline getindex_extension(_, _, ext::ExtensionNothing) = nothing
 @inline setindex_extension!(_, _, _, ext::ExtensionNothing) = nothing
@@ -40,11 +49,8 @@ setindex_extension!
 @inline getindex_extension(_, _, ext::ExtensionConstant) = ext.value
 @inline setindex_extension!(_, _, _, ext::ExtensionConstant) = ext.value
 
-@propagate_inbounds @inline function getindex_extension(w, wi, ext)
-    a = parent(w)
-    return a[index_extension(a, position(w) + wi, ext)]
-end
-@propagate_inbounds @inline function setindex_extension!(w, x, wi, ext)
-    a = parent(w)
-    return a[index_extension(a, position(w) + wi, ext)] = x
-end
+@propagate_inbounds getindex_extension(a, i, _) =
+    a[index_extension(a, i, extension(a))]
+
+@propagate_inbounds setindex_extension!(a, x, i, _) =
+    a[index_extension(a, i, extension(a))] = x

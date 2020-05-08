@@ -38,37 +38,55 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
 
         # iteration
         @test_broken sum(v for v in w) == sum(a[1:3, 1:3])
+
+        # wrong kernel axes
+        let a = rand(1)
+            k = Kernel{(0:0,)}(w -> w[1])
+            @test_throws MethodError map(k, a)
+        end
+    end
+
+    @testset "extended array" begin
+        ae = extend(a, StaticKernels.ExtensionNothing())
+        #@test isnothing(ae[0,0])
     end
 
     @testset "extensions" begin
-        k = Kernel{(-1:1, -1:1)}(w -> sum(Tuple(w)), StaticKernels.ExtensionNone())
-        @test size(map(k, a)) == size(k, a)
+        ae = extend(a, StaticKernels.ExtensionNone())
+        k = Kernel{(-1:1, -1:1)}(w -> sum(Tuple(w)))
+        @test size(map(k, ae)) == size(k, ae)
 
-        k = Kernel{(-1:1, -1:1)}(w -> w[1,0] + w[0,0], StaticKernels.ExtensionNothing())
-        @test_throws MethodError map(k, a)
-        k = Kernel{(-1:1, -1:1)}(w -> something(w[1,0], 0), StaticKernels.ExtensionNothing())
-        @test size(map(k, a)) == size(k, a)
-        @test all(map(k, a)[end, :] .== 0)
+        ae = extend(a, StaticKernels.ExtensionNothing())
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0] + w[0,0])
+        @test_throws MethodError map(k, ae)
+        k = Kernel{(-1:1, -1:1)}(w -> something(w[1,0], 0))
+        @test size(map(k, ae)) == size(k, ae)
+        @test all(map(k, ae)[end, :] .== 0)
 
-        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionReplicate())
-        @test size(map(k, a)) == size(k, a)
-        @test all(map(k, a)[end, :] .== a[end, :])
+        ae = extend(a, StaticKernels.ExtensionReplicate())
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0])
+        @test size(map(k, ae)) == size(k, ae)
+        @test all(map(k, ae)[end, :] .== ae[end, :])
 
-        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionCircular())
-        @test size(map(k, a)) == size(k, a)
-        @test all(map(k, a)[end, :] .== a[begin, :])
+        ae = extend(a, StaticKernels.ExtensionCircular())
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0])
+        @test size(map(k, ae)) == size(k, ae)
+        @test all(map(k, ae)[end, :] .== ae[begin, :])
 
-        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionSymmetric())
-        @test size(map(k, a)) == size(k, a)
-        @test all(map(k, a)[end, :] .== a[end-1, :])
+        ae = extend(a, StaticKernels.ExtensionSymmetric())
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0])
+        @test size(map(k, ae)) == size(k, ae)
+        @test all(map(k, ae)[end, :] .== ae[end-1, :])
 
-        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionConstant(0))
-        @test eltype(k, a) == Union{eltype(a)}
-        @test size(map(k, a)) == size(k, a)
-        @test all(map(k, a)[end, :] .== 0)
+        ae = extend(a, StaticKernels.ExtensionConstant(0.))
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0])
+        @test eltype(k, ae) == eltype(ae)
+        @test size(map(k, ae)) == size(k, ae)
+        @test all(map(k, ae)[end, :] .== 0)
 
-        k = Kernel{(-1:1, -1:1)}(w -> w[1,0], StaticKernels.ExtensionConstant(missing))
-        @test eltype(k, a) == Union{Missing,eltype(a)}
+        ae = extend(a, StaticKernels.ExtensionConstant(missing))
+        k = Kernel{(-1:1, -1:1)}(w -> w[1,0])
+        @test eltype(k, ae) == Union{Missing,eltype(ae)}
     end
 
     @testset "mapreduce" begin
@@ -100,39 +118,54 @@ end
 @testset "memory allocations" begin
     a = rand(100)
     ks = [
-        Kernel{(0:0,)}(w -> w[0], StaticKernels.ExtensionNone()),
-        Kernel{(0:0,)}(w -> something(w[1], 0), StaticKernels.ExtensionNothing()),
-        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionReplicate()),
-        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionCircular()),
-        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionSymmetric()),
-        Kernel{(0:0,)}(w -> w[1], StaticKernels.ExtensionConstant(0)),
-        Kernel{(0:1,)}(w -> Tuple(w), StaticKernels.ExtensionNone()),
-        ]
+        (Kernel{(0:0,)}(w -> w[0]), StaticKernels.ExtensionNone()),
+        (Kernel{(0:1,)}(w -> something(w[1], 0.)), StaticKernels.ExtensionNothing()),
+        (Kernel{(0:1,)}(w -> w[1]), StaticKernels.ExtensionReplicate()),
+        (Kernel{(0:1,)}(w -> w[1]), StaticKernels.ExtensionCircular()),
+        (Kernel{(0:1,)}(w -> w[1]), StaticKernels.ExtensionSymmetric()),
+        (Kernel{(0:1,)}(w -> w[1]), StaticKernels.ExtensionConstant(0.)),
+        (Kernel{(0:1,)}(w -> Tuple(w)), StaticKernels.ExtensionNone())]
 
-    @testset "map!" for k in ks
-        b = similar(a, eltype(k, a), size(k, a))
-        @test 0 == @ballocated map!($k, $b, $a)
+    @testset "map! $(x[2])" for x in ks
+        k, extension = x
+        ae = extend(a, extension)
+        b = similar(ae, eltype(k, ae), size(k, ae))
+        @test 0 == @ballocated map!($k, $b, $ae)
     end
 
-    @testset "sum!" for k in ks[1:6]
-        @test 0 == @ballocated sum($k, $a)
+    @testset "sum" for x in ks[1:6]
+        k, extension = x
+        ae = extend(a, extension)
+        @test eltype(k, ae) == eltype(a)
+        @test 0 == @ballocated sum($k, $ae)
     end
 end
 
 @testset "performance" begin
     a = rand(1000000)
+    a2 = rand(1000, 1000)
+    a2ext = extend(rand(1000, 1000), StaticKernels.ExtensionConstant(0))
 
     @testset "Base.diff" begin
-        k = Kernel{(0:1,)}((@inline function(w) @inbounds w[1] - w[0] end))
+        k = Kernel{(0:1,)}(@inline function(w) @inbounds w[1] - w[0] end)
 
         @test 1.3 > @belapsed(map($k, $a)) / @belapsed(diff($a))
     end
 
     @testset "Base.map" begin
-        k = Kernel{(0:0,)}((@inline function(w) @inbounds w[0] end))
+        k = Kernel{(0:0,)}(@inline function(w) @inbounds w[0] end)
         b = similar(a, size(k, a))
 
         @test 1.1 > @belapsed(map!($k, $b, $a)) / @belapsed(map!(identity, $b, $a))
+    end
+
+    @testset "extension" begin
+        k = Kernel{(-1:1,-1:1)}(
+            @inline function(w) @inbounds w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1] end)
+        b2 = similar(a2, size(k, a2))
+        b2ext = similar(a2ext, size(k, a2ext))
+
+        @test 1.1 > @belapsed(map!($k, $b2ext, $a2ext)) / @belapsed(map!($k, $b2, $a2))
     end
 end
 

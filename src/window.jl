@@ -16,23 +16,23 @@ function Window end
 
 # AbstractArray interface
 
-Base.axes(w::Window) = extension(w.kernel) isa ExtensionNothing ? axes_inner(w) : axes(w.kernel)
+Base.axes(w::Window) = extension(parent(w)) == ExtensionNone() ? axes_inner(w) : axes(w.kernel)
 Base.size(w::Window) = length.(axes(w))
 
 @propagate_inbounds Base.getindex(w::Window, wi::Int...) = getindex(w, CartesianIndex(wi))
-@propagate_inbounds @inline function Base.getindex(w::Window{<:Any,N}, wi::CartesianIndex{N}) where N
+@propagate_inbounds function Base.getindex(w::Window{<:Any,N}, wi::CartesianIndex{N}) where N
     # central piece to get efficient boundary handling.
     # we rely on the compiler to constant propagate this check away
-    checkbounds_inner(Bool, w, wi) || return getindex_extension(w, wi, extension(w.kernel))
+    checkbounds_inner(Bool, w, wi) || return getindex_extension(w, wi)
 
     return parent(w)[position(w) + wi]
 end
 
 @propagate_inbounds Base.setindex!(w::Window, x, wi::Int...) = setindex!(w, x, CartesianIndex(wi))
-@propagate_inbounds @inline function Base.setindex!(w::Window{<:Any,N}, x, wi::CartesianIndex{N}) where N
+@propagate_inbounds function Base.setindex!(w::Window{<:Any,N}, x, wi::CartesianIndex{N}) where N
     # central piece to get efficient boundary handling.
     # we rely on the compiler to constant propagate this check away
-    checkbounds_inner(Bool, w, wi) || return setindex_extension!(w, x, wi, extension(w.kernel))
+    checkbounds_inner(Bool, w, wi) || return setindex_extension!(w, x, wi)
 
     return parent(w)[position(w) + wi] = x
 end
@@ -79,10 +79,11 @@ NOTE: this doesn't check bounds and thus assumes the window was properly
       created.
 """
 @generated function Base.Tuple(w::Window)
-    # redefine it locally to avoid potential world-age issues
+    # local reimplementation of axes(w) to avoid potential world-age issues
     _axes(::Type{W}) where W =
-        W.parameters[4].parameters[3] == ExtensionNothing ?
-            W.parameters[3] : W.parameters[4].parameters[1]
+        W.parameters[5] <: ExtensionArray &&
+        (W.parameters[5].parameters[4] != ExtensionNothing && W.parameters[5].parameters[4] != ExtensionNone) ?
+            W.parameters[4].parameters[1] : W.parameters[3]
 
     return :( @_inline_meta; @inbounds ($((:(w[$i]) for i in CartesianIndices(_axes(w)))...),) )
 end

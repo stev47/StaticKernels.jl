@@ -29,23 +29,23 @@ k = Kernel{(-1:1,-1:1)}(w -> minimum(Tuple(w)))
 map(k, a)
 
 # laplace, zero boundary condition
-k = Kernel{(-1:1,-1:1)}(kf, StaticKernels.ExtensionConstant(0))
-map(k, a)
+k = Kernel{(-1:1,-1:1)}(kf)
+map(k, extend(a, StaticKernels.ExtensionConstant(0)))
 
 # forward-gradient (non-skalar kernel), neumann boundary condition
 kf(w) = (w[1,0] - w[0,0], w[0,1] - w[0,0])
-k = Kernel{(0:1, 0:1)}(kf, StaticKernels.ExtensionReplicate())
-map(k, a)
+k = Kernel{(0:1, 0:1)}(kf)
+map(k, extend(a, StaticKernels.ExtensionReplicate()))
 
 # custom boundary using `nothing`
 kf(w) = something(w[1,1], w[-1,-1], 0)
-k = Kernel{(-1:1, -1:1)}(kf, StaticKernels.ExtensionNothing())
-map(k, a)
+k = Kernel{(-1:1, -1:1)}(kf)
+map(k, extend(a, StaticKernels.ExtensionNothing()))
 
 # total variation
 kf(w) = abs(w[1,0] - w[0,0]) + abs(w[0,1] - w[0,0])
-k = Kernel{(0:1,0:1)}(kf, StaticKernels.ExtensionReplicate())
-sum(k, a)
+k = Kernel{(0:1,0:1)}(kf)
+sum(k, extend(a, StaticKernels.ExtensionReplicate()))
 ```
 
 ## User Notes

@@ -1,11 +1,12 @@
 module StaticKernels
 
 export Kernel
-export position
+export extend
 
 include("types.jl")
 
 include("extension.jl")
+include("extendedarray.jl")
 include("window.jl")
 include("kernel.jl")
 

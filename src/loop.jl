@@ -9,8 +9,8 @@ according to the range of `k`.
 
 NOTE: It is assumed `kx` can fit inside `a`.
 """
-@generated function windowloop(f, kernel::Kernel{kx,<:Any,extension}, a::AbstractArray,
-        acc, op) where {kx, extension}
+@generated function windowloop(f, kernel::Kernel{kx}, a::AbstractArray,
+        acc, op) where {kx}
     # this assumes kx fits inside axes(x)
     wx(pos) = intersect.(kx, map((x,y) -> first(x) - y : last(x) - y, kx, pos))
 
@@ -29,7 +29,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         # lower boundary
         for i in first(kx[d]) : -1
-            extension == ExtensionNone && break
+            (a <: ExtensionArray && a.parameters[4] != ExtensionNone) || break
             push!(exprs, :($k = first(axes(a, $d)) + $(i - first(kx[d]))))
             push!(exprs, loop_expr((i, pos...)))
         end
@@ -39,7 +39,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         # upper boundary
         for i in 1 : last(kx[d])
-            extension == ExtensionNone && break
+            (a <: ExtensionArray && a.parameters[4] != ExtensionNone) || break
             push!(exprs, :($k = last(axes(a, $d)) - $(last(kx[d]) - i)))
             push!(exprs, loop_expr((i, pos...)))
         end

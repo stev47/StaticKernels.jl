@@ -2,7 +2,6 @@ using Base: promote_op, @propagate_inbounds
 
 """
     Kernel{X}(f)
-    Kernel{X}(f, extension::Extension)
 
 Create a kernel with axes `X` wrapping a kernel function `f`.
 
@@ -10,8 +9,6 @@ The kernel function `f` defines a reduction of values within an `X`-sized
 view. When the kernel is applied to data of an array `a` the kernel function
 gets called with one argument `w::Window` that provides a local view on the
 data.
-`extension` indicates how the view behaves when `a` would be accessed outside
-its axes and defaults to `ExtensionNone()` which throws.
 
 ```@example
 # Laplacian 3x3 Kernel (i.e. axes (-1:1, -1:1))
@@ -24,7 +21,7 @@ Kernel{(-1:1,-1:1)}(f)
 For best performance you should annotate the kernel function `f` with `@inline`
 and index accesses within using `@inbounds`.
 """
-Kernel{X}(f::Function) where X = Kernel{X}(f, ExtensionNone())
+function Kernel end
 
 function Base.show(io::IO, ::MIME"text/plain", k::Kernel)
     println(io, "Kernel{$(axes(k))} with window function\n")
@@ -40,8 +37,6 @@ Base.keys(k::Kernel) = CartesianIndices(axes(k))
 
 # FIXME: revise the following questionable interface
 
-extension(k::Kernel) = k.extension
-
 """
     eltype(k::Kernel, a::AbstractArray)
 
@@ -50,8 +45,8 @@ Infer the return type of `k` when applied to an interior window of `a`.
 Base.eltype(k::Kernel, a::AbstractArray{T,N}) where {T,N} =
     promote_op(k.f, Window{T,N,axes(k),typeof(k),typeof(a)})
 
-Base.eltype(k::Kernel{<:Any,<:Any,ExtensionConstant{TK}}, a::AbstractArray{T,N}) where {TK,T,N} =
-    Base.promote_type(TK, promote_op(k.f, Window{T,N,axes(k),typeof(k),typeof(a)}))
+Base.eltype(k::Kernel, a::ExtensionArray{T,N}) where {T,N} =
+    promote_op(k.f, Window{T,N,axes(k),typeof(k),Array{Base.promote_type(T,eltype_extension(a)),ndims(a)}})
 
 """
     axes(k::Kernel, a::AbstractArray)
@@ -62,7 +57,7 @@ Return axes along which `k` can be applied to a window of `a`.
     ndims(a) == ndims(k) ||
         throw(DimensionMismatch("$(ndims(a)) vs $(ndims(k))"))
 
-    extension(k) isa ExtensionNone || return axes(a)
+    extension(a) != ExtensionNone() && return axes(a)
 
     return map(axes(a), axes(k)) do ax, kx
         first(ax) - first(kx) : last(ax) - last(kx)
