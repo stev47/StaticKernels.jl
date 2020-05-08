@@ -1,5 +1,18 @@
 using Base: @propagate_inbounds
 
+@inline index_extension(_, _, ext::Extension) =
+    throw(ArgumentError("index_extension() undefined for extension $ext"))
+
+@inline index_extension(a, i, ext::ExtensionReplicate) =
+    CartesianIndex(clamp.(Tuple(i), 1, size(a)))
+
+@inline index_extension(a, i, ext::ExtensionCircular) =
+    CartesianIndex(mod1.(Tuple(i), size(a)))
+
+symidx(k, n) = mod1(isodd(fld1(k, n)) ? k : -k, n)
+@inline index_extension(a, i, ext::ExtensionSymmetric) =
+    CartesianIndex(symidx.(Tuple(i), size(a)))
+
 """
     getindex_extension(w::Window, wi::CartesianCoordinate, ext::Extension)
 
@@ -8,8 +21,7 @@ respecting the extension behaviour `ext`.
 Users may define their own extension behaviour by defining additional methods
 for this function.
 """
-@inline getindex_extension(_, _, ext::Extension) =
-    throw(ArgumentError("getindex_extension() undefined for extension type $ext"))
+getindex_extension
 
 """
     setindex_extension!(w::Window, x, wi::CartesianCoordinate, ext::Extension)
@@ -20,8 +32,7 @@ Users may define their own extension behaviour by defining additional methods
 for this function.
 Depending on the extension a call to this function may be a no-op.
 """
-@inline setindex_extension!(_, _, _, ext::Extension) =
-    throw(ArgumentError("setindex_extension() undefined for extension type $ext"))
+setindex_extension!
 
 @inline getindex_extension(_, _, ext::ExtensionNothing) = nothing
 @inline setindex_extension!(_, _, _, ext::ExtensionNothing) = nothing
@@ -29,35 +40,11 @@ Depending on the extension a call to this function may be a no-op.
 @inline getindex_extension(_, _, ext::ExtensionConstant) = ext.value
 @inline setindex_extension!(_, _, _, ext::ExtensionConstant) = ext.value
 
-@propagate_inbounds @inline function getindex_extension(w, wi, ext::ExtensionReplicate)
-    pi = position(w) + wi
-    pimod = CartesianIndex(clamp.(Tuple(pi), 1, size(parent(w))))
-    return parent(w)[pimod]
+@propagate_inbounds @inline function getindex_extension(w, wi, ext)
+    a = parent(w)
+    return a[index_extension(a, position(w) + wi, ext)]
 end
-@propagate_inbounds @inline function setindex_extension!(w, x, wi, ext::ExtensionReplicate)
-    pi = position(w) + wi
-    pimod = CartesianIndex(clamp.(Tuple(pi), 1, size(parent(w))))
-    return parent(w)[pimod] = x
-end
-
-@propagate_inbounds @inline function getindex_extension(w, wi, ext::ExtensionCircular)
-    pi = position(w) + wi
-    pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
-    return parent(w)[pimod]
-end
-@propagate_inbounds @inline function setindex_extension!(w, x, wi, ext::ExtensionCircular)
-    pi = position(w) + wi
-    pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
-    return parent(w)[pimod] = x
-end
-
-@propagate_inbounds @inline function getindex_extension(w, wi, ext::ExtensionSymmetric)
-    pi = position(w) - wi
-    pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
-    return parent(w)[pimod]
-end
-@propagate_inbounds @inline function setindex_extension!(w, x, wi, ext::ExtensionSymmetric)
-    pi = position(w) - wi
-    pimod = CartesianIndex(mod1.(Tuple(pi), size(parent(w))))
-    return parent(w)[pimod] = x
+@propagate_inbounds @inline function setindex_extension!(w, x, wi, ext)
+    a = parent(w)
+    return a[index_extension(a, position(w) + wi, ext)] = x
 end
