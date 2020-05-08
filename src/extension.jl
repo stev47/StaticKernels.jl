@@ -31,12 +31,12 @@ Depending on the extension a call to this function may be a no-op.
 
 @propagate_inbounds @inline function getindex_extension(w, wi, ext::ExtensionReplicate)
     pi = position(w) + wi
-    pimod = CartesianIndex(clamp.(Tuple(pi), ntuple(_->1, Val(length(wi))), size(parent(w))))
+    pimod = CartesianIndex(clamp.(Tuple(pi), 1, size(parent(w))))
     return parent(w)[pimod]
 end
 @propagate_inbounds @inline function setindex_extension!(w, x, wi, ext::ExtensionReplicate)
     pi = position(w) + wi
-    pimod = CartesianIndex(clamp.(Tuple(pi), ntuple(_->1, Val(length(wi))), size(parent(w))))
+    pimod = CartesianIndex(clamp.(Tuple(pi), 1, size(parent(w))))
     return parent(w)[pimod] = x
 end
 
