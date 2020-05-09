@@ -100,8 +100,3 @@ Base.CartesianIndices(w::Window) = CartesianIndices(axes(w))
 Base.keys(w::Window) = CartesianIndices(w)
 @inline Base.checkbounds(::Type{Bool}, w::Window, i::CartesianIndex) =
     in(i, keys(w))
-#@inline function Base.iterate(w::Window, state=(eachindex(w),))
-#    y = iterate(state...)
-#    y === nothing && return nothing
-#    w[y[1]], (state[1], Base.tail(y)...)
-#end
