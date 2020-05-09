@@ -8,15 +8,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
 
 @testset "consistency" begin
     a = rand(10, 10)
-
-    @testset "gradient" begin
-        grad = Kernel{(0:1,0:1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))
-
-        grada = map(grad, a)
-        gx = axes(grad, a)
-        @test diff(a, dims=1)[gx...] ≈ [x[1] for x in grada[gx...]]
-        @test diff(a, dims=2)[gx...] ≈ [x[2] for x in grada[gx...]]
-    end
+    a2 = rand(10, 10)
 
     @testset "window" begin
         b = similar(a)
@@ -49,6 +41,41 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
     @testset "extended array" begin
         ae = extend(a, StaticKernels.ExtensionNothing())
         #@test isnothing(ae[0,0])
+    end
+
+    @testset "kernel" begin
+        k = Kernel{(-1:1,-1:1)}(@inline function(w) sum(Tuple(w)) end)
+        k2 = Kernel{(-1:1,-1:1)}(@inline function(w1, w2) sum(Tuple(w1)) + prod(Tuple(w2)) end)
+        @test eltype(k, a) == eltype(a)
+        @test eltype(k2, a, a2) == eltype(a)
+    end
+
+    @testset "map" begin
+        k = Kernel{(-1:1,0:1)}(w -> w[-1,0] + w[1,1])
+        @test map(k, a) == a[1:end-2,1:end-1] .+ a[3:end,2:end]
+
+        k = Kernel{(-1:1,0:1)}((w1, w2) -> w1[-1,0] + w2[1,1])
+        @test map(k, a, a2) == a[1:end-2,1:end-1] .+ a2[3:end,2:end]
+    end
+
+    @testset "mapreduce" begin
+        k = Kernel{(-1:1,0:1)}(w -> w[-1,0] + w[1,1])
+        @test mapreduce(k, +, a) ≈ sum(a[1:end-2,1:end-1] .+ a[3:end,2:end])
+
+        k = Kernel{(-1:1,0:1)}((w1, w2) -> w1[-1,0] + w2[1,1])
+        @test mapreduce(k, +, a, a2) ≈ sum(a[1:end-2,1:end-1] .+ a2[3:end,2:end])
+
+        k = Kernel{(0:1, 0:0)}(w -> sum(Tuple(w)))
+        @test sum(k, a) ≈ sum(a[1:end-1,:]) + sum(a[2:end,:])
+    end
+
+    @testset "gradient" begin
+        grad = Kernel{(0:1,0:1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))
+
+        grada = map(grad, a)
+        gx = axes(grad, a)
+        @test diff(a, dims=1)[gx...] ≈ [x[1] for x in grada[gx...]]
+        @test diff(a, dims=2)[gx...] ≈ [x[2] for x in grada[gx...]]
     end
 
     @testset "extensions" begin
@@ -88,11 +115,6 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         k = Kernel{(-1:1, -1:1)}(w -> w[1,0])
         @test eltype(k, ae) == Union{Missing,eltype(ae)}
     end
-
-    @testset "mapreduce" begin
-        k = Kernel{(0:1, 0:0)}(w -> sum(Tuple(w)))
-        @test sum(k, a) ≈ sum(a[1:end-1,:]) + sum(a[2:end,:])
-    end
 end
 
 @testset "type stability" begin
@@ -107,7 +129,10 @@ end
 
     @testset "kernel evaluation" begin
         k = Kernel{(0:0,)}(w -> w[0])
-        @test eltype(k, a) == Float64
+        @test eltype(k, a) == eltype(a)
+
+        k = Kernel{(0:0,)}((w1, w2) -> w1[0] + w2[0])
+        @test eltype(k, a, a) == eltype(a)
 
         k = Kernel{(0:0,)}(w -> Tuple(w))
         @test eltype(k, a) <: Tuple
@@ -117,6 +142,7 @@ end
 
 @testset "memory allocations" begin
     a = rand(100)
+    a2 = rand(100)
     ks = [
         (Kernel{(0:0,)}(w -> w[0]), StaticKernels.ExtensionNone()),
         (Kernel{(0:1,)}(w -> something(w[1], 0.)), StaticKernels.ExtensionNothing()),
@@ -133,11 +159,18 @@ end
         @test 0 == @ballocated map!($k, $b, $ae)
     end
 
-    @testset "sum" for x in ks[1:6]
+    @testset "sum $(x[2])" for x in ks[1:6]
         k, extension = x
         ae = extend(a, extension)
         @test eltype(k, ae) == eltype(a)
         @test 0 == @ballocated sum($k, $ae)
+    end
+
+    @testset "multiargument" begin
+        k = Kernel{(-1:1,)}((w1, w2) -> w1[-1] + w2[1])
+        b = similar(a, eltype(k, a, a2), size(k, a))
+        @test 0 == @ballocated map!($k, $b, $a, $a2)
+        @test 0 == @ballocated mapreduce($k, +, $a, $a2)
     end
 end
 

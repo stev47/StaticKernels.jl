@@ -24,8 +24,8 @@ and index accesses within using `@inbounds`.
 function Kernel end
 
 function Base.show(io::IO, ::MIME"text/plain", k::Kernel)
-    println(io, "Kernel{$(axes(k))} with window function\n")
-    print(code_lowered(k.f, (AbstractArray{Any},))[1])
+    print(io, "Kernel{$(axes(k))} with window function $(k.f)")
+    #print(code_lowered(k.f, (AbstractArray{Any},))[1])
 end
 
 Base.axes(::Kernel{X}) where X = X
@@ -33,7 +33,7 @@ Base.ndims(k::Kernel) = length(axes(k))
 Base.size(k::Kernel) = length.(axes(k))
 Base.keys(k::Kernel) = CartesianIndices(axes(k))
 
-@inline (k::Kernel)(w::Window) = k.f(w)
+@inline (k::Kernel)(w::Window...) = k.f(w...)
 
 # FIXME: revise the following questionable interface
 
@@ -42,8 +42,8 @@ Base.keys(k::Kernel) = CartesianIndices(axes(k))
 
 Infer the return type of `k` when applied to an interior window of `a`.
 """
-Base.eltype(k::Kernel, a::AbstractArray{T,N}) where {T,N} =
-    promote_op(k.f, Window{T,N,axes(k),typeof(k),typeof(a)})
+Base.eltype(k::Kernel, a::AbstractArray{T,N}...) where {T,N} =
+    promote_op(k.f, map(ai->Window{T,N,axes(k),typeof(k),typeof(ai)}, a)...)
 
 Base.eltype(k::Kernel, a::ExtensionArray{T,N}) where {T,N} =
     promote_op(k.f, Window{T,N,axes(k),typeof(k),Array{Base.promote_type(T,eltype_extension(a)),ndims(a)}})
