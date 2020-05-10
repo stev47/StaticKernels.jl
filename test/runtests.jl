@@ -133,6 +133,7 @@ end
 
         k = Kernel{(0:0,)}((w1, w2) -> w1[0] + w2[0])
         @test eltype(k, a, a) == eltype(a)
+        @test eltype(k, a, round.(Int, a)) == Base.promote_type(eltype(a), Int)
 
         k = Kernel{(0:0,)}(w -> Tuple(w))
         @test eltype(k, a) <: Tuple

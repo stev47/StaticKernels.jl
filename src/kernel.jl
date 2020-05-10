@@ -42,8 +42,8 @@ Base.keys(k::Kernel) = CartesianIndices(axes(k))
 
 Infer the return type of `k` when applied to an interior window of `a`.
 """
-Base.eltype(k::Kernel, a::AbstractArray{T,N}...) where {T,N} =
-    promote_op(k.f, map(ai->Window{T,N,axes(k),typeof(k),typeof(ai)}, a)...)
+Base.eltype(k::Kernel, a::AbstractArray...) =
+    promote_op(k.f, map(ai->Window{eltype(ai),ndims(ai),axes(k),typeof(k),typeof(ai)}, a)...)
 
 Base.eltype(k::Kernel, a::ExtensionArray{T,N}) where {T,N} =
     promote_op(k.f, Window{T,N,axes(k),typeof(k),Array{Base.promote_type(T,eltype_extension(a)),ndims(a)}})
