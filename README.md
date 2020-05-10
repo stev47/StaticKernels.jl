@@ -10,8 +10,8 @@ Current features include
 - kernel acts as a function in e.g. `map` or `mapreduce`
 - package is small and dependency free
 
-This package is not a zoo of different kernels and filters, but instead enables
-you to write them easily and efficiently yourself.
+This package is not a big zoo of different kernels and filters, but instead
+enables you to write them easily and efficiently yourself.
 
 ## Usage
 
@@ -52,30 +52,26 @@ sum(k, extend(a, StaticKernels.ExtensionReplicate()))
 
 - for best performance you should annotate kernel functions with `@inline` and
   `@inbounds`
-- the package is aimed at small kernels, use different algorithms for larger
-  kernels (inplace formulations or fft)
+- the package is currently aimed at small kernels, for bigger kernels consider
+  using different algorithms (inplace formulations or fft)
 - (currently) high compilation time for larger kernels or higher dimensions for
   boundary specializations
 
 ## Implementation Notes
 
-We use a statically sized array view `StaticKernels.Window` on which the
-user-defined kernel function is applied. Access outside the window size returns
-`nothing` instead of throwing an out-of-bounds error.
-
-The user-supplied kernel function is specialized for all different `Windows`
-(appropriately cropped versions on boundaries) and thus infers away checks like
-e.g. `something(w[1,0], 0)` by leveraging constant propagation.
-
-These components together with the auto-vectorizing Julia compiler allow for
-fast execution.
-
+- a statically sized array view `StaticKernels.Window` with relative indexing
+  is supplied to the user-defined kernel function
+- the user-supplied kernel function is specialized for all cropped windows on
+  the boundary, thus eliminating run-time checks.
+- for cache efficiency boundaries are handled along with the interior instead
+  of separately.
+- for fully inlined kernel functions the Julia compiler manages to
+  auto-vectorize the kernel loop efficiently in most cases.
 
 ## TODO
 
 - nicer (but type-instable) interface for kernel creation
 - abstract/strided array interface for windows (blocked by julia issue)
-- multi-window kernels for e.g. `map(k, a1, a2)`
 - think about more specific kernel types and composability
 - syntactic sugar for determining kernel size through index access:
   `@kernel(w -> w[1] - w[0]) == Kernel{(0:1,)}(w -> w[1] - w[0])`
