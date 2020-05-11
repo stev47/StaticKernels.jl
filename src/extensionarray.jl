@@ -8,7 +8,7 @@ Base.eltype(a::ExtensionArray) = eltype(parent(a))
 Base.axes(a::ExtensionArray) = axes(parent(a))
 Base.size(a::ExtensionArray) = size(parent(a))
 Base.length(a::ExtensionArray) = length(parent(a))
-Base.iterate(a::ExtensionArray, state...) = iterate(a, state...)
+Base.iterate(a::ExtensionArray, state...) = iterate(parent(a), state...)
 @propagate_inbounds Base.getindex(a::ExtensionArray, i...) =
     getindex(parent(a), i...)
 @propagate_inbounds Base.setindex!(a::ExtensionArray, x, i...) =
