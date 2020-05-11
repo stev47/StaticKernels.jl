@@ -72,7 +72,7 @@ sum(k, extend(a, StaticKernels.ExtensionReplicate()))
 
 - make `k(a)` create a broadcastable object (define broadcast style, use
   windowloop in `copy!(bc)` and define appropriate axes)
-- introduce elementary kernel `offset(a, CartesianIndex(1, 1))`, `@offset a[1,1]`
+- introduce elementary kernel `shift(a, CartesianIndex(1, 1))`, `@shift a[1,1]`
 - nicer (but type-instable) interface for kernel creation
 - abstract/strided array interface for windows (blocked by julia issue)
 - think about more specific kernel types and composability
