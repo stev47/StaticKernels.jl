@@ -17,6 +17,27 @@ A kernel object with axes `X` that is wrapping a kernel function of type `F`.
 struct Kernel{X,F}
     f::F
 
+    """
+        Kernel{X}(f)
+
+    Create a kernel with axes `X` wrapping a kernel function `f`.
+
+    The kernel function `f` defines a reduction of values within an `X`-sized
+    view. When the kernel is applied to data of an array `a` the kernel function
+    gets called with one argument `w::Window` that provides a local view on the
+    data.
+
+    ```@example
+    # Laplacian 3x3 Kernel (i.e. axes (-1:1, -1:1))
+    function f(w)
+        return w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1]
+    end
+    Kernel{(-1:1,-1:1)}(f)
+    ```
+
+    For best performance you should annotate the kernel function `f` with `@inline`
+    and index accesses within using `@inbounds`.
+    """
     function Kernel{X}(f::F) where {X,F<:Function}
         X isa NTuple{<:Any,UnitRange{Int}} ||
             throw(ArgumentError("invalid axes: $X"))
