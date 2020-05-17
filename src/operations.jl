@@ -5,10 +5,10 @@ allequal(a) = isempty(a) ? true : mapfoldl(==(first(a)), &, a)
 
 function Base.map!(k::Kernel, b::AbstractArray, a::AbstractArray...)
     allequal(axes.(Ref(k), a)) ||
-        throw(DimensionMismatch("input axes don't agree $(join(axes.(Ref(k), a), " vs "))"))
+        throw(DimensionMismatch("trimmed input axes don't agree: $(join(axes.(Ref(k), a), " vs "))"))
 
     size(b) == size(k, first(a)) ||
-        throw(DimensionMismatch("$(size(b)) vs $(join(size.(Ref(k), a), " vs "))"))
+        throw(DimensionMismatch("output size doesn't match: $(size(b)) vs $(join(size.(Ref(k), a), " vs "))"))
 
     # these offsets may constant propagate to 0
     offset = CartesianIndex(first.(axes(b))) - CartesianIndex(first.(axes(k, first(a))))
