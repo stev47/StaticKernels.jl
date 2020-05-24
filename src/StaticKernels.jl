@@ -13,4 +13,6 @@ include("kernel.jl")
 include("loop.jl")
 include("operations.jl")
 
+include("broadcast.jl")
+
 end

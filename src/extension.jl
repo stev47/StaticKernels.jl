@@ -1,7 +1,5 @@
 using Base: @propagate_inbounds
 
-eltype_extension(a::AbstractArray) = eltype(a)
-
 @inline index_extension(_, _, ext::Extension) =
     throw(ArgumentError("index_extension() undefined for extension $ext"))
 
@@ -49,8 +47,8 @@ setindex_extension!
 @inline getindex_extension(_, _, ext::ExtensionConstant) = ext.value
 @inline setindex_extension!(_, _, _, ext::ExtensionConstant) = ext.value
 
-@propagate_inbounds getindex_extension(a, i, _) =
+@propagate_inbounds getindex_extension(a, i, _::Extension) =
     a[index_extension(a, i, extension(a))]
 
-@propagate_inbounds setindex_extension!(a, x, i, _) =
+@propagate_inbounds setindex_extension!(a, x, i, _::Extension) =
     a[index_extension(a, i, extension(a))] = x
