@@ -1,7 +1,5 @@
 # StaticKernels
 
-[![builds.sr.ht status](https://builds.sr.ht/~stev47/statickernels.jl.svg)](https://builds.sr.ht/~stev47/statickernels.jl?)
-
 Julia-native non-allocating kernel operations on arrays.
 Current features include
 
