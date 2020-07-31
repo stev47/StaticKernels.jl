@@ -30,7 +30,7 @@ map(k, a)
 k = Kernel{(-1:1,-1:1)}(kf)
 map(k, extend(a, StaticKernels.ExtensionConstant(0)))
 
-# forward-gradient (non-skalar kernel), neumann boundary condition
+# forward-gradient (non-scalar kernel), neumann boundary condition
 kf(w) = (w[1,0] - w[0,0], w[0,1] - w[0,0])
 k = Kernel{(0:1, 0:1)}(kf)
 map(k, extend(a, StaticKernels.ExtensionReplicate()))
