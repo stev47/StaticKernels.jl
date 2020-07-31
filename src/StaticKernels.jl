@@ -2,6 +2,7 @@ module StaticKernels
 
 export Kernel
 export extend
+export @kernel
 
 include("types.jl")
 

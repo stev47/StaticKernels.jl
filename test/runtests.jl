@@ -72,6 +72,25 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         @test sum(k, a) ≈ sum(a[1:end-1,:]) + sum(a[2:end,:])
     end
 
+    @testset "kernel macro" begin
+        b = vec(a)
+
+        k1 = @kernel w -> w[0]
+        k2 = Kernel{(0:0,)}(w -> w[0])
+        @test map(k1, b) == map(k2, b)
+
+        k1 = @kernel w -> w[1] + w[-2]
+        k2 = Kernel{(-2:1,)}(w -> w[1] + w[-2])
+        @test map(k1, b) == map(k2, b)
+
+        k1 = @kernel w -> w[1,2] + w[-3,5]
+        k2 = Kernel{(-3:1,2:5)}(w -> w[1,2] + w[-3,5])
+        @test map(k1, a) == map(k2, a)
+
+        @test_throws LoadError @macroexpand @kernel w -> w
+        @test_throws LoadError @macroexpand @kernel w -> w[1] + w[2,3]
+    end
+
     @testset "gradient" begin
         grad = Kernel{(0:1,0:1)}(w -> (w[1,0] - w[0,0], w[0,1] - w[0,0]))
 

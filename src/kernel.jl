@@ -50,3 +50,60 @@ Return size of the cartesian region over which `k` can be applied to a window
 of `a`.
 """
 @inline Base.size(k::Kernel, a::AbstractArray) = length.(axes(k, a))
+
+"""
+    @kernel(wf)
+
+Create a `Kernel` from the supplied anonymous window function `wf` by inferring
+the kernel axes automatically.
+
+For example the following two lines create functionally equivalent kernels:
+```julia
+@kernel w -> w[1] - w[0]
+Kernel{(0:1,)}(w -> w[1] - w[0])
+```
+
+This macro currently expects an anonymous function and is intended purely as a
+shorthand in the frequent case that your kernel axes can easily be inferred
+from constant indices.
+"""
+macro kernel(wf)
+    # TODO: automatically add @inline and @inbounds
+    function walk(f, expr)
+        f(expr)
+        isa(expr, Expr) || return
+        foreach(x -> walk(f, x), expr.args)
+    end
+    enclose(a) = first(a) : last(a)
+    enclose(a, b) = min(first(a), first(b)) : max(last(a), last(b))
+
+    wf.head == :-> || error("anonymous function expected")
+
+    if wf.args[1] isa Symbol
+        wfargs = [wf.args[1]]
+    elseif wf.args[1] isa Expr && wf.args[1].head == :tuple
+        wfargs = wf.args[1].args
+    else
+        error("unexpected function arguments")
+    end
+    wfbody = wf.args[2]
+
+    d = nothing
+    ax = nothing
+    walk(wfbody) do x
+        if x isa Expr && x.head == :ref && x.args[1] in wfargs
+            all(x -> isa(x, Int), x.args[2:end]) ||
+                error("encountered non-explicit index, consider writing explicit indices or using the non-macro syntax instead")
+            if isnothing(d)
+                d = length(x.args) - 1
+                ax = enclose.(x.args[2:end])
+            else
+                d == length(x.args) - 1 || error("window index dimensions don't match")
+                ax = enclose.(ax, x.args[2:end])
+            end
+        end
+    end
+    (isnothing(d) || isnothing(ax)) &&
+        error("could not determine kernel axes")
+    return :( $Kernel{($(ax...),)}($(esc(wf))) )
+end
