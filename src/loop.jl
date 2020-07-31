@@ -56,8 +56,8 @@ NOTE: It is assumed `kx` can fit inside `a`.
 
         a1 = first(a)
         # lower and upper limits for interior
-        ilo = first.(axes(a1)) .+ $(max.(0, .-first.(kx)))
-        iup = last.(axes(a1)) .- $(max.(0, last.(kx)))
+        ilo = first.(axes(a1)) .+ $(.-first.(kx))
+        iup = last.(axes(a1)) .- $(last.(kx))
 
         $(loop_expr(()))
 

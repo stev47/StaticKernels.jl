@@ -51,6 +51,9 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
     end
 
     @testset "map" begin
+        k = Kernel{(1:1, -1:-1)}(w -> w[1, -1])
+        @test map(k, a) == a
+
         k = Kernel{(-1:1,0:1)}(w -> w[-1,0] + w[1,1])
         @test map(k, a) == a[1:end-2,1:end-1] .+ a[3:end,2:end]
 
