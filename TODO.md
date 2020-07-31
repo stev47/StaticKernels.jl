@@ -1,8 +1,9 @@
 # TODO
 
+- think about using LoopVectorization and KernelAbstractions as (optional?) backends
 - make `k(a)` create a broadcastable object (define broadcast style, use
   windowloop in `copy!(bc)` and define appropriate axes)
-- nicer (but type-instable) interface for kernel creation
+- nicer (but type-instable) interface for extensions
 - abstract/strided array interface for windows (blocked by julia issue)
 - think about more specific kernel types and composability
 
