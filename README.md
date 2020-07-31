@@ -17,32 +17,29 @@ enables you to write them easily and efficiently yourself.
 using StaticKernels
 a = rand(1000, 1000)
 
-# laplace
-kf(w) = w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1]
-k = Kernel{(-1:1,-1:1)}(kf)
-map(k, a)
-
-# erosion
+# erosion on a centered 3x3 window
 k = Kernel{(-1:1,-1:1)}(w -> minimum(Tuple(w)))
 map(k, a)
 
-# laplace, zero boundary condition
-k = Kernel{(-1:1,-1:1)}(kf)
+# 2d laplace
+k = @kernel w -> w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1]
+map(k, a)
+# using zero boundary condition
 map(k, extend(a, StaticKernels.ExtensionConstant(0)))
+# preallocated
+b = similar(a, size(k, a))
+map!(k, b, a)
 
 # forward-gradient (non-scalar kernel), neumann boundary condition
-kf(w) = (w[1,0] - w[0,0], w[0,1] - w[0,0])
-k = Kernel{(0:1, 0:1)}(kf)
+k = @kernel w -> (w[1,0] - w[0,0], w[0,1] - w[0,0])
 map(k, extend(a, StaticKernels.ExtensionReplicate()))
 
 # custom boundary using `nothing`
-kf(w) = something(w[1,1], w[-1,-1], 0)
-k = Kernel{(-1:1, -1:1)}(kf)
+k = @kernel w -> something(w[1,1], w[-1,-1], 0)
 map(k, extend(a, StaticKernels.ExtensionNothing()))
 
-# total variation
-kf(w) = abs(w[1,0] - w[0,0]) + abs(w[0,1] - w[0,0])
-k = Kernel{(0:1,0:1)}(kf)
+# 2d total variation
+k = @kernel w -> abs(w[1,0] - w[0,0]) + abs(w[0,1] - w[0,0])
 sum(k, extend(a, StaticKernels.ExtensionReplicate()))
 ```
 
@@ -50,10 +47,11 @@ sum(k, extend(a, StaticKernels.ExtensionReplicate()))
 
 - for best performance you should annotate kernel functions with `@inline` and
   `@inbounds`
-- the package is currently aimed at small kernels, for bigger kernels consider
-  using different algorithms (inplace formulations or fft)
-- (currently) high compilation time for larger kernels or higher dimensions for
-  boundary specializations
+- the package is currently aimed at small-sized kernels, bigger-sized kernels
+  have worse performance and you might want to consider using different
+  algorithms (inplace reformulations or fft)
+- (currently) high compilation time for larger kernels or boundary
+  specialization in higher dimensions
 
 ## Implementation Notes
 
