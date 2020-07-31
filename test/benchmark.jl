@@ -100,8 +100,8 @@ for N in (100, 1000), K in (3, 5, 7)
 
     b = bench_linfilt(k, a, Val(:StaticKernels))
 
-    for s in [:LoopVectorization, :NNlib, :ImageFiltering, :LocalFilters]
-    #for s in [:LoopVectorization]
+    # disabled: :LocalFilters
+    for s in [:LoopVectorization, :NNlib, :ImageFiltering]
         @test b ≈ bench_linfilt(k, a, Val(s))
     end
 end
