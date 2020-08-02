@@ -3,13 +3,16 @@ Base.map(k::Kernel, a::AbstractArray...) =
 
 allequal(a) = isempty(a) ? true : mapfoldl(==(first(a)), &, a)
 
-function Base.map!(k::Kernel, b::AbstractArray, a::AbstractArray...)
+@inline function _map_checkargs(k::Kernel, b::AbstractArray, a::AbstractArray...)
     allequal(axes.(Ref(k), a)) ||
         throw(DimensionMismatch("trimmed input axes don't agree: $(join(axes.(Ref(k), a), " vs "))"))
 
     size(b) == size(k, first(a)) ||
         throw(DimensionMismatch("output size doesn't match: $(size(b)) vs $(join(size.(Ref(k), a), " vs "))"))
+end
 
+function Base.map!(k::Kernel, b::AbstractArray, a::AbstractArray...)
+    _map_checkargs(k, b, a...)
     # these offsets may constant propagate to 0
     offset = CartesianIndex(first.(axes(b))) - CartesianIndex(first.(axes(k, first(a))))
 
