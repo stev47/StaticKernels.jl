@@ -68,24 +68,25 @@ shorthand in the frequent case that your kernel axes can easily be inferred
 from constant indices.
 """
 macro kernel(wf)
-    # TODO: automatically add @inline and @inbounds
     function walk(f, expr)
-        f(expr)
+        f(expr) || return
         isa(expr, Expr) || return
         foreach(x -> walk(f, x), expr.args)
     end
     enclose(a) = first(a) : last(a)
     enclose(a, b) = min(first(a), first(b)) : max(last(a), last(b))
 
-    wf.head == :-> || error("anonymous function expected")
+    wf.head == :-> ||
+        throw(ArgumentError("anonymous function expected"))
 
     if wf.args[1] isa Symbol
         wfargs = [wf.args[1]]
     elseif wf.args[1] isa Expr && wf.args[1].head == :tuple
         wfargs = wf.args[1].args
     else
-        error("unexpected function arguments")
+        throw(ArgumentError(error("unexpected function arguments")))
     end
+    wf.args[2] = :(Base.@_inline_meta; $(wf.args[2]))
     wfbody = wf.args[2]
 
     d = nothing
@@ -93,15 +94,25 @@ macro kernel(wf)
     walk(wfbody) do x
         if x isa Expr && x.head == :ref && x.args[1] in wfargs
             all(x -> isa(x, Int), x.args[2:end]) ||
-                error("encountered non-explicit index, consider writing explicit indices or using the non-macro syntax instead")
+                throw(ArgumentError("""
+                    encountered non-integer index, consider using constant
+                    integer indices or the non-macro syntax instead
+                """))
+
             if isnothing(d)
                 d = length(x.args) - 1
                 ax = enclose.(x.args[2:end])
             else
-                d == length(x.args) - 1 || error("window index dimensions don't match")
+                d == length(x.args) - 1 ||
+                    throw(ArgumentError("window index dimensions don't match"))
                 ax = enclose.(ax, x.args[2:end])
             end
+            y = copy(x)
+            x.head = :macrocall
+            x.args = [Symbol("@inbounds"), LineNumberNode(0), y]
+            return false
         end
+        return true
     end
     (isnothing(d) || isnothing(ax)) &&
         error("could not determine kernel axes")
