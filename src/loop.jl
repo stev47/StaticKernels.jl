@@ -50,9 +50,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
     end
 
     return quote
-        # FIXME: inlining prevents allocation if f is mutating data in the
-        # caller scope, but when accumulating it allocates ?!
-        $(acc <: Nothing ? :(@_inline_meta) : :() )
+        Base.@_noinline_meta
 
         a1 = first(a)
         # lower and upper limits for interior

@@ -31,4 +31,4 @@ function Base.mapreduce(k::Kernel, op, a::AbstractArray...;
 end
 
 Base.mapfoldl(k::Kernel, op, a::AbstractArray...;
-        init=Base.reduce_empty(op, eltype(k, a...))) = windowloop(k, k, init, op, a...)
+        init=Base.reduce_empty(op, eltype(k, a...))) = windowloop(k.f, k, init, op, a...)
