@@ -5,7 +5,8 @@ function Base.show(io::IO, ::MIME"text/plain", k::Kernel)
     #print(code_lowered(k.f, (AbstractArray{Any},))[1])
 end
 
-Base.axes(::Kernel{X}) where X = X
+Base.axes(::Type{<:Kernel{X}}) where X = X
+Base.axes(k::Kernel) = axes(typeof(k))
 Base.ndims(k::Kernel) = length(axes(k))
 Base.size(k::Kernel) = length.(axes(k))
 Base.keys(k::Kernel) = CartesianIndices(axes(k))

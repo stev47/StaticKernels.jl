@@ -16,7 +16,14 @@ function Window end
 
 # AbstractArray interface
 
-Base.axes(w::Window) = extension(parent(w)) == ExtensionNone() ? axes_inner(w) : axes(w.kernel)
+Base.axes(::Type{W}) where W<:Window =
+    W.parameters[5] <: ExtensionArray &&
+    W.parameters[5].parameters[4] != ExtensionNothing &&
+    W.parameters[5].parameters[4] != ExtensionNone ?
+        axes(W.parameters[4]) :
+        W.parameters[3]
+
+Base.axes(w::Window) = axes(typeof(w))
 Base.size(w::Window) = length.(axes(w))
 
 @propagate_inbounds Base.getindex(w::Window, wi::Int...) = getindex(w, CartesianIndex(wi))
@@ -79,13 +86,8 @@ NOTE: this doesn't check bounds and thus assumes the window was properly
       created.
 """
 @generated function Base.Tuple(w::Window)
-    # local reimplementation of axes(w) to avoid potential world-age issues
-    _axes(::Type{W}) where W =
-        W.parameters[5] <: ExtensionArray &&
-        (W.parameters[5].parameters[4] != ExtensionNothing && W.parameters[5].parameters[4] != ExtensionNone) ?
-            W.parameters[4].parameters[1] : W.parameters[3]
-
-    return :( @_inline_meta; @inbounds ($((:(w[$i]) for i in CartesianIndices(_axes(w)))...),) )
+    els = [ :( w[$i] ) for i in CartesianIndices(axes(w)) ]
+    return :( @_inline_meta; @inbounds ($(els...),) )
 end
 
 
