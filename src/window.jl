@@ -47,6 +47,8 @@ end
 
 # Window interface
 
+Base.eltype(::Type{<:Window{T}}) where T = T
+
 """
     checkbounds_inner(Bool, w::Window, i::CartesianIndex)
 
@@ -96,7 +98,7 @@ end
 #   TODO: remove these as soon as Window <: AbstractArray
 
 Base.ndims(w::Window) = length(axes(w))
-Base.eltype(w::Window{T}) where T = T
+Base.eltype(w::Window) = eltype(typeof(w))
 Base.length(w::Window) = prod(size(w))
 Base.CartesianIndices(w::Window) = CartesianIndices(axes(w))
 Base.keys(w::Window) = CartesianIndices(w)
