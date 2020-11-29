@@ -4,6 +4,7 @@ export Kernel
 export extend
 export @kernel
 
+include("util.jl")
 include("types.jl")
 
 include("extension.jl")

@@ -1,8 +1,6 @@
 Base.map(k::Kernel, a::AbstractArray...) =
     map!(k, similar(first(a), eltype(k, a...), size(k, first(a))), a...)
 
-allequal(a) = isempty(a) ? true : mapfoldl(==(first(a)), &, a)
-
 @inline function _map_checkargs(k::Kernel, b::AbstractArray, a::AbstractArray...)
     allequal(axes.(Ref(k), a)) ||
         throw(DimensionMismatch("trimmed input axes don't agree: $(join(axes.(Ref(k), a), " vs "))"))
