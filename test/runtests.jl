@@ -28,8 +28,13 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
             @test a[c + i] == w[i]
         end
 
+        aw = a[1:3, 1:3]
         # iteration
-        @test_broken sum(v for v in w) == sum(a[1:3, 1:3])
+        @test_broken sum(v for v in w) == sum(aw)
+
+        # mapreduce
+        @test sum(w) == sum(aw)
+        @test minimum(w) == minimum(aw)
 
         # wrong kernel axes
         let a = rand(1)
@@ -213,6 +218,14 @@ end
         b = similar(a, size(k, a))
 
         @test 1.1 > @belapsed(map!($k, $b, $a)) / @belapsed(map!(identity, $b, $a))
+    end
+
+    @testset "window mapreduce" begin
+        k1 = Kernel{(-1:1,)}(@inline function(w) @inbounds sum(w) end)
+        k2 = Kernel{(-1:1,)}(@inline function(w) @inbounds w[-1] + w[0] + w[1] end)
+        b = similar(a, size(k1, a))
+
+        @test 1.1 > @belapsed(map!($k2, $b, $a)) / @belapsed(map!($k1, $b, $a))
     end
 
     @testset "extension" begin
