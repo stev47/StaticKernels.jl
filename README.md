@@ -11,17 +11,13 @@ Current features include
 This package is not a big zoo of different kernels and filters, but instead
 enables you to write them easily and efficiently yourself.
 
-## Usage
+## Examples
 
 ```julia
 using StaticKernels
 a = rand(1000, 1000)
 
-# erosion on a centered 3x3 window
-k = Kernel{(-1:1,-1:1)}(w -> minimum(Tuple(w)))
-map(k, a)
-
-# 2d laplace
+# 2d laplace finite difference
 k = @kernel w -> w[0,-1] + w[-1,0] - 4*w[0,0] + w[1,0] + w[0,1]
 map(k, a)
 # using zero boundary condition
@@ -41,6 +37,16 @@ map(k, extend(a, StaticKernels.ExtensionNothing()))
 # 2d total variation
 k = @kernel w -> abs(w[1,0] - w[0,0]) + abs(w[0,1] - w[0,0])
 sum(k, extend(a, StaticKernels.ExtensionReplicate()))
+
+# erosion on a centered 3x3 window
+k = Kernel{(-1:1,-1:1)}(@inline w -> minimum(w))
+map(k, a)
+
+# Conway's game of life
+a = rand(Bool, 1000, 1000)
+k = Kernel{(-1:1,-1:1)}(
+    @inline w -> (count(w) - w[0,0] == 3 || count(w) == 3 && w[0,0]))
+a .= map(k, extend(a, StaticKernels.ExtensionConstant(false)))
 ```
 
 ## User Notes
