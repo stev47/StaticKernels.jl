@@ -11,7 +11,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
     a2 = rand(10, 10)
 
     @testset "window" begin
-        b = similar(a)
+        b = rand(size(a)...)
         c = CartesianIndex(2, 2)
         k = Kernel{(-1:1, -1:1)}(identity)
         w = Window{axes(k)}(k, a, c)
