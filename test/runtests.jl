@@ -92,8 +92,8 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         k2 = Kernel{(-3:1,2:5)}(w -> w[1,2] + w[-3,5])
         @test map(k1, a) == map(k2, a)
 
-        @test_throws LoadError @macroexpand @kernel w -> w
-        @test_throws LoadError @macroexpand @kernel w -> w[1] + w[2,3]
+        @test_throws Exception @macroexpand @kernel w -> w
+        @test_throws Exception @macroexpand @kernel w -> w[1] + w[2,3]
     end
 
     @testset "gradient" begin
