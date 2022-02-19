@@ -1,7 +1,7 @@
 name = "StaticKernels"
 uuid = "4c63dfa8-a427-4548-bd2f-4c19e87a7dc7"
 authors = ["Stephan Hilb <stephan@ecshi.net>"]
-version = "0.6.1"
+version = "0.6.2"
 
 [compat]
 julia = "1.4.0"
