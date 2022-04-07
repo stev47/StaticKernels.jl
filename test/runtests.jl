@@ -202,11 +202,11 @@ end
     end
 end
 
-@testset "performance" begin
-    # since Julia PkgEval runs are less consistent,
-    # we want to avoid potential noise
-    haskey(ENV, "JULIA_PKGEVAL") && return
+# since CI runs may be less consistent, we skip certain performance oriented
+# tests below this point by default
+(isempty(ARGS) || haskey(ENV, "JULIA_PKGEVAL")) && exit(0)
 
+@testset "performance" begin
     a = rand(1000000)
     a2 = rand(1000, 1000)
     a2ext = extend(rand(1000, 1000), StaticKernels.ExtensionConstant(0))
