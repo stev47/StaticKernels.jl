@@ -2,6 +2,16 @@ using Base: @propagate_inbounds
 
 eltype_extension(a::AbstractArray) = eltype(a)
 
+"""
+    index_extension(a::AbstractArray, i::CartesianIndex, ext::Extension)
+
+Return a valid index into `a` which corresponds to indexing `a` with `i`
+respecting the extension `ext`.
+Users may define their own extension behaviour by defining additional methods
+for this function.
+"""
+index_extension
+
 @inline index_extension(_, _, ext::Extension) =
     throw(ArgumentError("index_extension() undefined for extension $ext"))
 
@@ -16,7 +26,7 @@ symidx(k, n) = mod1(isodd(fld1(k, n)) ? k : -k, n)
     CartesianIndex(symidx.(Tuple(i), size(a)))
 
 """
-    getindex_extension(w::Window, wi::CartesianCoordinate, ext::Extension)
+    getindex_extension(w::Window, wi::CartesianIndex, ext::Extension)
 
 Return a value for an indexing operation on `w` with relative index `wi`
 respecting the extension behaviour `ext`.
@@ -26,7 +36,7 @@ for this function.
 getindex_extension
 
 """
-    setindex_extension!(w::Window, x, wi::CartesianCoordinate, ext::Extension)
+    setindex_extension!(w::Window, x, wi::CartesianIndex, ext::Extension)
 
 Store the value `x` for an indexing operation on `w` with relative index `wi`
 respecting the extension behaviour `ext`.
