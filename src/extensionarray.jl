@@ -18,8 +18,11 @@ Base.iterate(a::ExtensionArray, state...) = iterate(parent(a), state...)
 
 extend(a::AbstractArray, extension::Extension) = ExtensionArray(a, extension)
 
-extension(a::AbstractArray) = ExtensionNone()
-extension(a::ExtensionArray) = a.extension
+has_extension(a) = has_extension(typeof(a))
+has_extension(::Type{<:AbstractArray}) = false
+has_extension(::Type{<:ExtensionArray}) = true
+
+get_extension(a) = has_extension(a) ? a.extension : nothing
 
 eltype_extension(a::ExtensionArray{<:Any,<:Any,<:Any,ExtensionConstant{S}}) where S = S
 

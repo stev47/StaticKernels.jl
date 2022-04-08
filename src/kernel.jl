@@ -37,7 +37,7 @@ Return axes along which `k` can be applied to a window of `a`.
     ndims(a) == ndims(k) ||
         throw(DimensionMismatch("$(ndims(a)) vs $(ndims(k))"))
 
-    extension(a) != ExtensionNone() && return axes(a)
+    has_extension(a) && return axes(a)
 
     return map(axes(a), axes(k)) do ax, kx
         first(ax) - first(kx) : last(ax) - last(kx)

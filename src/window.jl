@@ -18,8 +18,7 @@ function Window end
 
 Base.axes(::Type{W}) where W<:Window =
     W.parameters[5] <: ExtensionArray &&
-    W.parameters[5].parameters[4] != ExtensionNothing &&
-    W.parameters[5].parameters[4] != ExtensionNone ?
+    W.parameters[5].parameters[4] != ExtensionNothing ?
         axes(W.parameters[4]) :
         W.parameters[3]
 

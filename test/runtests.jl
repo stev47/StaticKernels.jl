@@ -106,10 +106,6 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
     end
 
     @testset "extensions" begin
-        ae = extend(a, StaticKernels.ExtensionNone())
-        k = Kernel{(-1:1, -1:1)}(w -> sum(Tuple(w)))
-        @test size(map(k, ae)) == size(k, ae)
-
         ae = extend(a, StaticKernels.ExtensionNothing())
         k = Kernel{(-1:1, -1:1)}(w -> w[1,0] + w[0,0])
         @test_throws MethodError map(k, ae)
@@ -172,13 +168,12 @@ end
     a = rand(100)
     a2 = rand(100)
     ks = [
-        (Kernel{(0:0,)}(w -> w[0]), StaticKernels.ExtensionNone()),
         (Kernel{(0:1,)}(w -> something(w[1], 0.)), StaticKernels.ExtensionNothing()),
         (Kernel{(0:1,)}(w -> w[1]), StaticKernels.ExtensionReplicate()),
         (Kernel{(0:1,)}(w -> w[1]), StaticKernels.ExtensionCircular()),
         (Kernel{(0:1,)}(w -> w[1]), StaticKernels.ExtensionSymmetric()),
         (Kernel{(0:1,)}(w -> w[1]), StaticKernels.ExtensionConstant(0.)),
-        (Kernel{(0:1,)}(w -> Tuple(w)), StaticKernels.ExtensionNone())]
+        (Kernel{(0:1,)}(w -> Tuple(w)), StaticKernels.ExtensionCircular())]
 
     @testset "map! $(x[2])" for x in ks
         k, extension = x
@@ -187,10 +182,11 @@ end
         @test 0 == @ballocated map!($k, $b, $ae)
     end
 
-    @testset "sum $(x[2])" for x in ks[1:6]
+    @testset "sum $(x[2])" for x in ks
         k, extension = x
         ae = extend(a, extension)
-        @test eltype(k, ae) == eltype(a)
+        # skip tuple eltype for accumulation
+        eltype(k, ae) <: Tuple && continue
         @test 0 == @ballocated sum($k, $ae)
     end
 
@@ -214,7 +210,7 @@ end
     @testset "Base.diff" begin
         k = Kernel{(0:1,)}(@inline function(w) @inbounds w[1] - w[0] end)
 
-        @test 1.3 > @belapsed(map($k, $a)) / @belapsed(diff($a))
+        @test 1.1 > @belapsed(map($k, $a)) / @belapsed(diff($a))
     end
 
     @testset "Base.map" begin

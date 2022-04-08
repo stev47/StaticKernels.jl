@@ -50,7 +50,7 @@ setindex_extension!
 @inline setindex_extension!(_, _, _, ext::ExtensionConstant) = ext.value
 
 @propagate_inbounds getindex_extension(a, i, _) =
-    a[index_extension(a, i, extension(a))]
+    a[index_extension(a, i, get_extension(a))]
 
 @propagate_inbounds setindex_extension!(a, x, i, _) =
-    a[index_extension(a, i, extension(a))] = x
+    a[index_extension(a, i, get_extension(a))] = x

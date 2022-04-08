@@ -1,6 +1,5 @@
 abstract type Extension end
 
-struct ExtensionNone <: Extension end
 struct ExtensionNothing <: Extension end
 struct ExtensionReplicate <: Extension end
 struct ExtensionCircular <: Extension end
