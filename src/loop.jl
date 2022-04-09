@@ -10,9 +10,13 @@ according to the range of `k`.
 NOTE: It is assumed `kx` can fit inside `a`.
 """
 @generated function windowloop(f, kernel::Kernel{kx}, acc, op, a::AbstractArray...) where {kx}
-    # this assumes kx fits inside axes(x)
-    # pos: 0 for interior, ±n for lower/upper boundary
-    wx(pos) = intersect.(kx, map((x,y) -> first(x) - y : last(x) - y, kx, pos))
+    # calculate window interior axes
+    # pos: offset at boundary, 0 for interior, ±n for lower/upper boundary
+    function wx(pos)
+        # this assumes kx fits inside axes(x)
+        kx_shifted = map((x,y) -> first(x) - y : last(x) - y, kx, pos)
+        return intersect.(kx, kx_shifted)
+    end
 
     a1 = first(a)
 

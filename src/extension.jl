@@ -47,20 +47,20 @@ may be implemented as a no-op.
 """
 setindex_extension!
 
+# delegate from `Window` to parent `ExtensionArray`
 @propagate_inbounds getindex_extension(w::Window, wi) =
     getindex_extension(parent(w), position(w) + wi)
-
 @propagate_inbounds setindex_extension!(w::Window, x, wi) =
     setindex_extension!(parent(w), x, position(w) + wi)
+
+# default implementation using `index_extension`
+@propagate_inbounds getindex_extension(a, i, ext) =
+    a[index_extension(a, i, ext)]
+@propagate_inbounds setindex_extension!(a, x, i, ext) =
+    a[index_extension(a, i, ext)] = x
 
 @inline getindex_extension(_, _, ext::ExtensionNothing) = nothing
 @inline setindex_extension!(_, _, _, ext::ExtensionNothing) = nothing
 
 @inline getindex_extension(_, _, ext::ExtensionConstant) = ext.value
 @inline setindex_extension!(_, _, _, ext::ExtensionConstant) = ext.value
-
-@propagate_inbounds getindex_extension(a, i, _) =
-    a[index_extension(a, i, get_extension(a))]
-
-@propagate_inbounds setindex_extension!(a, x, i, _) =
-    a[index_extension(a, i, get_extension(a))] = x

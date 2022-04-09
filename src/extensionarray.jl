@@ -27,6 +27,6 @@ get_extension(a) = has_extension(a) ? a.extension : nothing
 eltype_extension(a::ExtensionArray{<:Any,<:Any,<:Any,ExtensionConstant{S}}) where S = S
 
 @propagate_inbounds getindex_extension(a::ExtensionArray, i) =
-    getindex_extension(a, i, a.extension)
+    getindex_extension(parent(a), i, a.extension)
 @propagate_inbounds setindex_extension!(a::ExtensionArray, x, i) =
-    setindex_extension!(a, x, i, a.extension)
+    setindex_extension!(parent(a), x, i, a.extension)
