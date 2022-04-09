@@ -114,6 +114,13 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
     end
 
     @testset "extensions" begin
+        @test StaticKernels._index_replicate.(-4:4, Ref(-1:1)) ==
+            [-1, -1, -1, -1, 0, 1, 1, 1, 1]
+        @test StaticKernels._index_circular.(-4:4, Ref(-1:1)) ==
+            [-1, 0, 1, -1, 0, 1, -1, 0, 1]
+        @test StaticKernels._index_symmetric.(-4:4, Ref(-1:1)) ==
+            [1, 0, -1, -1, 0, 1, 1, 0, -1]
+
         ae = extend(a, StaticKernels.ExtensionNothing())
         k = Kernel{(-1:1, -1:1)}(w -> w[1,0] + w[0,0])
         @test_throws MethodError map(k, ae)
@@ -132,7 +139,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         @test all(map(k, ae)[end, :] .== ae[begin, :])
 
         ae = extend(a, StaticKernels.ExtensionSymmetric())
-        k = Kernel{(-1:1, -1:1)}(w -> w[1,0])
+        k = Kernel{(2:2, 0:0)}(w -> w[2,0])
         @test size(map(k, ae)) == size(k, ae)
         @test all(map(k, ae)[end, :] .== ae[end-1, :])
 

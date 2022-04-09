@@ -15,15 +15,19 @@ index_extension
 @inline index_extension(_, _, ext::Extension) =
     throw(ArgumentError("index_extension() undefined for extension $ext"))
 
+_index_replicate(i, ax) = clamp(i, first(ax), last(ax))
 @inline index_extension(a, i, ext::ExtensionReplicate) =
-    CartesianIndex(clamp.(Tuple(i), 1, size(a)))
+    CartesianIndex(_index_replicate.(Tuple(i), axes(a)))
 
+_index_circular(i, ax) = mod(i - first(ax), length(ax)) + first(ax)
 @inline index_extension(a, i, ext::ExtensionCircular) =
-    CartesianIndex(mod1.(Tuple(i), size(a)))
+    CartesianIndex(_index_circular.(Tuple(i), axes(a)))
 
-symidx(k, n) = mod1(isodd(fld1(k, n)) ? k : -k, n)
+_index_symmetric(i, ax) =
+    (j = i - first(ax); k = mod(j, length(ax));
+        (iseven(fld(j, length(ax))) ? k : length(ax) - k - 1) + first(ax))
 @inline index_extension(a, i, ext::ExtensionSymmetric) =
-    CartesianIndex(symidx.(Tuple(i), size(a)))
+    CartesianIndex(_index_symmetric.(Tuple(i), axes(a)))
 
 """
     getindex_extension(w::Window, wi::CartesianIndex, ext::Extension)
