@@ -51,13 +51,17 @@ NOTE: It is assumed `kx` can fit inside `a`.
         return Expr(:block, exprs...)
     end
 
+    # cutoff for interior limits
+    kilo = has_extension(a1) ? min.(0, first.(kx)) : first.(kx)
+    kiup = has_extension(a1) ? max.(0, last.(kx)) : last.(kx)
+
     return quote
         Base.@_noinline_meta
 
         a1 = first(a)
         # lower and upper limits for interior
-        ilo = first.(axes(a1)) .+ $(.-first.(kx))
-        iup = last.(axes(a1)) .- $(last.(kx))
+        ilo = first.(axes(a1)) .- $(kilo)
+        iup = last.(axes(a1)) .- $(kiup)
 
         $(loop_expr(()))
 

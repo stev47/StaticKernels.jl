@@ -55,6 +55,14 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         @test eltype(k2, a, a2) == eltype(a)
     end
 
+    @testset "windowloop" begin
+        # shifted kernels on extended arrays
+        ae = extend(1:2, StaticKernels.ExtensionConstant(0))
+        k = Kernel{(1:1,)}(w -> w[1])
+        StaticKernels.windowloop(w -> (@test(checkbounds(Bool, ae, w.position))),
+            k, nothing, (_, _)->nothing, ae)
+    end
+
     @testset "map" begin
         k = Kernel{(1:1, -1:-1)}(w -> w[1, -1])
         @test map(k, a) == a
