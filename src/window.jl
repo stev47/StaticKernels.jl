@@ -14,8 +14,8 @@ Base.axes(::Type{W}) where W<:Window =
 Base.axes(w::Window) = axes(typeof(w))
 Base.size(w::Window) = length.(axes(w))
 
-@propagate_inbounds Base.getindex(w::Window, wi::Int...) = getindex(w, CartesianIndex(wi))
-@propagate_inbounds function Base.getindex(w::Window{<:Any,N}, wi::CartesianIndex{N}) where N
+Base.@constprop :aggressive @propagate_inbounds Base.getindex(w::Window, wi::Int...) = getindex(w, CartesianIndex(wi))
+Base.@constprop :aggressive @propagate_inbounds function Base.getindex(w::Window{<:Any,N}, wi::CartesianIndex{N}) where N
     @boundscheck wi in CartesianIndices(axes_kernel(w)) || throw(BoundsError(w, Tuple(wi)))
     # central piece to get efficient boundary handling.
     # we rely on the compiler to constant propagate this check away
@@ -24,8 +24,8 @@ Base.size(w::Window) = length.(axes(w))
     return parent(w)[position(w) + wi]
 end
 
-@propagate_inbounds Base.setindex!(w::Window, x, wi::Int...) = setindex!(w, x, CartesianIndex(wi))
-@propagate_inbounds function Base.setindex!(w::Window{<:Any,N}, x, wi::CartesianIndex{N}) where N
+Base.@constprop :aggressive @propagate_inbounds Base.setindex!(w::Window, x, wi::Int...) = setindex!(w, x, CartesianIndex(wi))
+Base.@constprop :aggressive @propagate_inbounds function Base.setindex!(w::Window{<:Any,N}, x, wi::CartesianIndex{N}) where N
     @boundscheck wi in CartesianIndices(axes_kernel(w)) || throw(BoundsError(w, Tuple(wi)))
     # central piece to get efficient boundary handling.
     # we rely on the compiler to constant propagate this check away
@@ -48,7 +48,7 @@ end
 Return true if `i` indexes `w`'s parent in the interior and false if an
 extension would be involved.
 """
-@inline checkbounds_inner(::Type{Bool}, w::Window, i::CartesianIndex) =
+Base.@constprop :aggressive @inline checkbounds_inner(::Type{Bool}, w::Window, i::CartesianIndex) =
     in(i, CartesianIndices(axes_inner(w)))
 
 """
@@ -94,18 +94,12 @@ NOTE: this doesn't check bounds and thus assumes the window was properly
     return :( @_inline_meta; @inbounds ($(els...),) )
 end
 
-## think twice before defining `iterate` like this, rather encourage use of
-## mapreduce functions
-#
-#@generated function Base.iterate(w::Window, st = nothing)
-#    ci = CartesianIndices(axes(w))
-#    return quote
-#        @_inline_meta
-#        it = isnothing(st) ? iterate($ci) : iterate($ci, st)
-#        isnothing(it) && return nothing
-#        return @inbounds w[it[1]], it[2]
-#    end
-#end
+# For iteration we preload the window into a tuple, since this makes it easier
+# to constant-propagate indexing which in turn enables better optimizations.
+Base.@constprop :aggressive @inline function Base.iterate(w::Window, st = nothing)
+    wtup, i = isnothing(st) ? (Tuple(w), 1) : st
+    1 <= i <= length(w) ? (wtup[i], (wtup, i + 1)) : nothing
+end
 
 # specialized mapfoldl, since Julia base has an upper limit on tuple size for
 # inlining it

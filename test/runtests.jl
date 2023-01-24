@@ -32,7 +32,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
 
         aw = a[1:3, 1:3]
         # iteration
-        @test_broken sum(v for v in w) == sum(aw)
+        @test sum(v for v in w) == sum(aw)
 
         # mapreduce
         @test sum(w) == sum(aw)
