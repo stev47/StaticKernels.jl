@@ -30,24 +30,22 @@ _index_symmetric(i, ax) =
     CartesianIndex(_index_symmetric.(Tuple(i), axes(a)))
 
 """
-    getindex_extension(w::Window, wi::CartesianIndex, ext::Extension)
+    getindex_extension(a::AbstractArray, i::CartesianIndex, ext::Extension)
 
-Return a value for an indexing operation on `w` with relative index `wi`
-respecting the extension behaviour `ext`.
-Users may define their own extension behaviour by defining additional methods
-for this function.
+Retrieve a value at an out-of-bounds index `i` of array `a` with extension `ext`.
+If no applicable method is implemented, [`StaticKernels.index_extension`](@ref)
+will be used to determine an in-bounds index.
 """
 getindex_extension
 
 """
-    setindex_extension!(w::Window, x, wi::CartesianIndex, ext::Extension)
+    setindex_extension!(a::AbstractArray, x, i::CartesianIndex, ext::Extension)
 
-Store the value `x` for an indexing operation on `w` with relative index `wi`
-respecting the extension behaviour `ext`.
-Users may define their own extension behaviour by defining additional methods
-for this function.
+Store the value `x` at an out-of-bounds index `i` of array `a` with extension `ext`.
+If no applicable method is implemented, [`StaticKernels.index_extension`](@ref)
+will be used to determine an in-bounds index.
 Depending on the extension a call to this function may be non-sensical and thus
-may be implemented as a no-op.
+implemented as a no-op.
 """
 setindex_extension!
 
