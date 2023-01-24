@@ -28,7 +28,7 @@ NOTE: It is assumed `kx` can fit inside `a`.
             ks = (Symbol('k', i) for i in eachindex(kx))
             ki = :( CartesianIndex($(ks...),) )
             ai = (:( Window{$(wx(pos))}(kernel, a[$i], $ki) ) for i in eachindex(a))
-            return :( acc = op(acc, f( $(ai...) )) )
+            return :( acc = @inline op(acc, f( $(ai...) )) )
         end
 
         exprs = Expr[]
