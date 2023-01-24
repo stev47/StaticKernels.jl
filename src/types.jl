@@ -48,7 +48,7 @@ end
     Window{T,N,X,K,A} <: AbstractArray{T,N}
 
 A stack-allocated array view fit for a kernel type `K` with indexing on axes
-`X` relative to some position in the parent array.
+`X` relative to some position in the parent array of type `A`.
 """
 # FIXME: inheriting from AbstractArray prevents us from constant-propagating
 # getindex(w, i). See also https://github.com/JuliaLang/julia/issues/35531
