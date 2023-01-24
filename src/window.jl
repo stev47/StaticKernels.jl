@@ -1,18 +1,5 @@
 using Base: @propagate_inbounds, @_inline_meta
 
-"""
-    Window{X}(k::Kernel, a::DenseArray, pos::CartesianIndex)
-
-Create a stack-allocated view on `a` with interior axes `X` and cartesian indexing
-relative to `pos` in the parent array.
-When indexing outside `X` the returned value is determined by the extension
-specified in `k`.
-The total axes of the window will span the full axes of kernel `k` except for
-when `k` was created with an `ExtensionNothing` in which case they will be
-trimmed.
-"""
-function Window end
-
 
 # AbstractArray interface
 

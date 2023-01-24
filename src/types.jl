@@ -45,7 +45,7 @@ struct Kernel{X,F}
 end
 
 """
-    Window{T,N,X,K,A}
+    Window{T,N,X,K,A} <: AbstractArray{T,N}
 
 A stack-allocated array view fit for a kernel type `K` with indexing on axes
 `X` relative to some position in the parent array.
@@ -59,6 +59,14 @@ struct Window{T,N,X,K,A}
     parent::A
     kernel::K
 
+    """
+        Window{X}(k::Kernel, a::AbstractArray, pos::CartesianIndex)
+
+    Create a stack-allocated view on `a` with interior axes `X` and cartesian indexing
+    relative to `pos` in the parent array.
+    When indexing outside `X` the returned value is determined by
+    [`StaticKernels.getindex_extension`](@ref).
+    """
     function Window{X}(k::Kernel, a::AbstractArray{T,N}, pos::CartesianIndex{N}) where {T,N,X}
         return new{T,N,X,typeof(k),typeof(a)}(pos, a, k)
     end
