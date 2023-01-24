@@ -4,4 +4,4 @@ authors = ["Stephan Hilb <stephan@ecshi.net>"]
 version = "0.7.0"
 
 [compat]
-julia = "1.4.0"
+julia = "1.8.0"
