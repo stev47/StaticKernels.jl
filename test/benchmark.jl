@@ -7,7 +7,7 @@ using ImageFiltering: centered, imfilter!, Inner
 using LocalFilters: convolve!
 import LocalFilters
 using OffsetArrays: OffsetArray
-using LoopVectorization: @avx
+using LoopVectorization: @turbo
 
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.5
 pd = 19
@@ -36,10 +36,10 @@ end
 function bench_linfilt(k, a, ::Val{:LoopVectorization})
     print(rpad("  LoopVectorization", pd))
 
-    # from discourse forum:
+    # originally from discourse forum:
     # https://discourse.julialang.org/t/ann-statickernels-jl-fast-kernel-operations-on-arrays/37658
-    function filter2davx!(out::AbstractMatrix, A::AbstractMatrix, kern)
-        @avx for J in CartesianIndices(out)
+    function filter2d!(out::AbstractMatrix, A::AbstractMatrix, kern)
+        @turbo for J in CartesianIndices(out)
             tmp = zero(eltype(out))
             for I ∈ CartesianIndices(kern)
                 tmp += A[I + J] * kern[I]
@@ -51,8 +51,8 @@ function bench_linfilt(k, a, ::Val{:LoopVectorization})
 
     b5 = similar(a, inner_axes(k, a))
     k5 = reshape(k, kernel_axes(k))
-    @btime $filter2davx!($b5, $a, $k5)
-    #filter2davx!(b5, a, k5)
+    @btime $filter2d!($b5, $a, $k5)
+    #filter2d!(b5, a, k5)
     # weird OffsetArray broadcast problem
     b5 = parent(b5)
 end
