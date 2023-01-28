@@ -45,7 +45,7 @@ struct Kernel{X,F}
 end
 
 """
-    Window{T,N,X,K,A} <: AbstractArray{T,N}
+    Window{T,N,X,K,A}
 
 A stack-allocated array view fit for a kernel type `K` with indexing on axes
 `X` relative to some position in the parent array of type `A`.
