@@ -30,6 +30,12 @@ end
     return parent(w)[position(w) + wi] = x
 end
 
+# delegate from `Window` to parent
+@propagate_inbounds getindex_extension(w::Window, wi) =
+    getindex_extension(parent(w), position(w) + wi)
+@propagate_inbounds setindex_extension!(w::Window, x, wi) =
+    setindex_extension!(parent(w), x, position(w) + wi)
+
 
 # Window interface
 
