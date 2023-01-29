@@ -16,6 +16,7 @@ Base.size(w::Window) = length.(axes(w))
 
 @propagate_inbounds Base.getindex(w::Window, wi::Int...) = getindex(w, CartesianIndex(wi))
 @propagate_inbounds function Base.getindex(w::Window{<:Any,N}, wi::CartesianIndex{N}) where N
+    @boundscheck wi in CartesianIndices(axes_kernel(w)) || throw(BoundsError(w, Tuple(wi)))
     # central piece to get efficient boundary handling.
     # we rely on the compiler to constant propagate this check away
     checkbounds_inner(Bool, w, wi) || return getindex_extension(w, wi)
@@ -25,6 +26,7 @@ end
 
 @propagate_inbounds Base.setindex!(w::Window, x, wi::Int...) = setindex!(w, x, CartesianIndex(wi))
 @propagate_inbounds function Base.setindex!(w::Window{<:Any,N}, x, wi::CartesianIndex{N}) where N
+    @boundscheck wi in CartesianIndices(axes_kernel(w)) || throw(BoundsError(w, Tuple(wi)))
     # central piece to get efficient boundary handling.
     # we rely on the compiler to constant propagate this check away
     checkbounds_inner(Bool, w, wi) || return setindex_extension!(w, x, wi)
@@ -61,7 +63,16 @@ Base.parent(w::Window) = w.parent
 
 Return the inner axes of the window where no extension handling is active.
 """
-axes_inner(w::Window{<:Any,<:Any,X}) where X = X
+axes_inner(w::Window) = axes_inner(typeof(w))
+axes_inner(w::Type{<:Window{<:Any,<:Any,X}}) where X = X
+
+"""
+    axes_kernel(w::Window)
+
+Return the axes of the corresponding kernel for which `w` was created.
+"""
+axes_kernel(w::Window) = axes_kernel(typeof(w))
+axes_kernel(w::Type{<:Window{<:Any,<:Any,<:Any,K}}) where K = axes(K)
 
 """
     position(w::Window)::CartesianIndex

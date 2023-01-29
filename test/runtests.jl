@@ -1,8 +1,6 @@
 using Test, BenchmarkTools
 using StaticKernels
 
-using StaticKernels: Window
-
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
 
 
@@ -13,12 +11,16 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
     @testset "window" begin
         b = rand(size(a)...)
         c = CartesianIndex(2, 2)
-        k = Kernel{(-1:1, -1:1)}(identity)
-        w = Window{axes(k)}(k, a, c)
+        kax = (-1:1, -1:1)
+        k = Kernel{kax}(identity)
+        w = StaticKernels.Window{axes(k)}(k, a, c)
 
         # AbstractArray interface
         @test ndims(w) == ndims(k)
         @test eltype(w) == eltype(a)
+        @test axes(w) == kax
+
+        @test StaticKernels.axes_inner(w) == StaticKernels.axes_kernel(w) == kax
 
         # getindex / setindex
         for i in CartesianIndices(w)
@@ -39,7 +41,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.1
         # wrong kernel axes
         let a = rand(1)
             k = Kernel{(0:0,)}(w -> w[1])
-            @test_throws MethodError map(k, a)
+            @test_throws BoundsError map(k, a)
         end
     end
 
@@ -161,7 +163,7 @@ end
     @testset "window" begin
         k = Kernel{(0:0,)}(w -> w)
 
-        @test eltype(k, a) <: Window
+        @test eltype(k, a) <: StaticKernels.Window
         @test isconcretetype(eltype(k, a))
     end
 
