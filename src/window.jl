@@ -3,6 +3,8 @@ using Base: @propagate_inbounds, @_inline_meta
 
 # AbstractArray interface
 
+Base.eltype(::Type{<:Window{T}}) where T = T
+Base.eltype(w::Window) = eltype(typeof(w))
 Base.axes(::Type{W}) where W<:Window =
     W.parameters[5] <: ExtensionArray &&
     W.parameters[5].parameters[4] != ExtensionNothing ?
@@ -30,16 +32,13 @@ end
     return parent(w)[position(w) + wi] = x
 end
 
-# delegate from `Window` to parent
+# Window interface
+
+# delegate extension to parent
 @propagate_inbounds getindex_extension(w::Window, wi) =
     getindex_extension(parent(w), position(w) + wi)
 @propagate_inbounds setindex_extension!(w::Window, x, wi) =
     setindex_extension!(parent(w), x, position(w) + wi)
-
-
-# Window interface
-
-Base.eltype(::Type{<:Window{T}}) where T = T
 
 """
     checkbounds_inner(Bool, w::Window, i::CartesianIndex)
@@ -131,7 +130,6 @@ end
 #   TODO: remove these as soon as Window <: AbstractArray
 
 Base.ndims(w::Window) = length(axes(w))
-Base.eltype(w::Window) = eltype(typeof(w))
 Base.length(w::Window) = prod(size(w))
 Base.CartesianIndices(w::Window) = CartesianIndices(axes(w))
 Base.keys(w::Window) = CartesianIndices(w)
