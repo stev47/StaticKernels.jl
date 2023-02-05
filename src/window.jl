@@ -130,17 +130,6 @@ end
     return :( @_inline_meta; $stm_init; $(stm_accs...); acc )
 end
 
-# Set of workarounds for not being able to subtype AbstractArray
-#   see also `src/types.jl`
-#   TODO: remove these as soon as Window <: AbstractArray
-
-Base.ndims(w::Window) = length(axes(w))
-Base.length(w::Window) = prod(size(w))
-Base.CartesianIndices(w::Window) = CartesianIndices(axes(w))
-Base.keys(w::Window) = CartesianIndices(w)
-@inline Base.checkbounds(::Type{Bool}, w::Window, i::CartesianIndex) =
-    in(i, keys(w))
-
 # redefine inlined variations of various operations on arrays
 # TODO: Julia base should define inlined dispatch function
 
